@@ -1,0 +1,22 @@
+{
+  "name": "",
+  "css_prefix_text": "",
+  "css_use_suffix": false,
+  "hinting": true,
+  "units_per_em": 1000,
+  "ascent": 850,
+  "glyphs": [
+    {
+      "uid": "1e099a876c8a6a83f10c9bafa9886614",
+      "css": "mic",
+      "code": 59392,
+      "src": "entypo"
+    },
+    {
+      "uid": "dc70be92c10c1ac96a8dd8c091eefe74",
+      "css": "tablet",
+      "code": 59451,
+      "src": "linearicons"
+    }
+  ]
+}
