@@ -5,9 +5,9 @@ flutter_native_splash:
   # ios: true
   # web: true
 
-  color: "#FFFFFF"  ##====================================[REQUIRED]==========
+  color: "#2E42DA"  ##====================================[REQUIRED]==========
 
-  image: assets/logo/esharalogo.png
+  image: assets/logo/splashlogo.png
   #image_dark:          assets/splash-invert.png
   # platform-specific image. will override general image if active:
   #image_android:       assets/splash-android.png
@@ -29,7 +29,7 @@ flutter_native_splash:
 
   # general branding for all platform (except android 12+):
   # allows you to specify an image used as branding in the splash screen. should be png.
-  branding: assets/logo/eshara.png
+  branding: assets/logo/splashlogo.png
   #branding_dark: assets/dart_dark.png
   # platform-specific branding. will override general branding if active:
   #branding_android:      assets/brand-android.png
@@ -77,7 +77,7 @@ flutter_native_splash:
   #! ANDROID 12+ configuration:
   android_12:
     # background color
-    color: "#FFFFFF"
+    color: "#2E42DA"
     # color_dark: "#042a49"
 
     # center-logo
@@ -86,11 +86,11 @@ flutter_native_splash:
     # with background: 960×960 px (fit within circle 640px in diameter)    
     # without background: 1152×1152 px (fit within circle 768px in diameter)
     # ensure that the most important design elements of your image are placed within a circular area 
-    image: assets/logo/esharalogo.png    
+    image: assets/logo/splashlogo.png   
     # image_dark: assets/images/logo/logo-splash2.png  
 
     # center-logo background color
-    icon_background_color: "#111111"
+    icon_background_color: "#2E42DA"
     # icon_background_color_dark: "#eeeeee"
 
     # branding:

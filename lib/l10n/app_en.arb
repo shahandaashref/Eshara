@@ -1,0 +1,20 @@
+{
+  "@@locale": "en",
+  "navHome": "Home",
+  "navCamera": "Camera",
+  "navLibrary": "Library",
+  "navProfile": "Profile",
+  "appName": "Eshara",
+  "welcomeMessage": "Welcome",
+  "welcomeSubtitle": "What would you like to translate today?",
+  "signToText": "Sign to Text",
+  "signToTextDesc": "Point the camera at a sign and we will translate it.",
+  "textToSign": "Text to Sign",
+  "textToSignDesc": "Type text and we will convert it to an interactive sign.",
+  "tagInstant": "Instant",
+  "tagAI": "AI",
+  "tagInteractive": "Interactive",
+  "tagDailyActivity": "Daily Activity",
+  "simulatedHandSign": "Hand sign",
+  "simulatedTranslation": "My name is , I study at Beni Suef University, and I am in my final year"
+}

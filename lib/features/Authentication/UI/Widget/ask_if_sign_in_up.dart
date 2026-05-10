@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 
 class AskIfSignInUp extends StatelessWidget {
-  final Function ontap;
+  final Function() ontap;
   final String textTap;
   final String text;
   const AskIfSignInUp({
@@ -21,7 +21,7 @@ class AskIfSignInUp extends StatelessWidget {
       children: [
         Text(text),
         GestureDetector(
-          onTap: () => ontap,
+          onTap:  ontap,
           child: Text(textTap, style: theme.textTheme.bodySmall),
         ),
       ],

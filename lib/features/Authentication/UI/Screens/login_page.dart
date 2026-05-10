@@ -55,7 +55,9 @@ class _LoginPageState extends State<LoginPage> {
               Align(
                 alignment: Alignment.centerLeft,
                 child: TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/forget_password');
+                  },
                   child: Text(
                     'نسيت كلمة المرور ؟',
                     style: theme.textTheme.bodyMedium?.copyWith(
@@ -79,7 +81,9 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 10),
 
               AskIfSignInUp(
-                ontap: () {},
+                ontap: () {
+                    Navigator.pushNamed(context, '/register');
+                },
                 text: ' سجل الآن',
                 textTap: 'ليس لديك حساب ؟',
               ),

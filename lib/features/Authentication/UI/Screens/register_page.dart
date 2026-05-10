@@ -14,6 +14,7 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  bool _isChecked=false;
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -60,7 +61,11 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
               Row(
                 children: [
-                  Checkbox(value: false, onChanged: (value) {}),
+                  Checkbox(value: _isChecked, onChanged: (bool? newValue) {
+        setState(() {
+          _isChecked = newValue!;
+        });
+      },),
                   Text('اوافق على جميع الشروط و الاحكام'),
                 ],
               ),
@@ -79,7 +84,9 @@ class _RegisterPageState extends State<RegisterPage> {
               const SizedBox(height: 10),
 
               AskIfSignInUp(
-                ontap: () {},
+                ontap: () {
+                    Navigator.pushNamed(context, '/login');
+                },
                 text: 'هل لديك حساب بالفعل؟',
                 textTap: ' سجل الدخول',
               ),

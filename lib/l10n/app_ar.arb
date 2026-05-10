@@ -1,0 +1,20 @@
+{
+  "@@locale": "ar",
+  "navHome": "الرئيسية",
+  "navCamera": "الكاميرا",
+  "navLibrary": "المكتبة",
+  "navProfile": "حسابي",
+  "appName": "إشارة",
+  "welcomeMessage": "مرحباً بك",
+  "welcomeSubtitle": "ماذا تريد أن تترجم اليوم؟",
+  "signToText": "ترجمة الإشارة إلى نص",
+  "signToTextDesc": "قم بتوجيه الكاميرا للإشارة وسنقوم بترجمتها.",
+  "textToSign": "ترجمة النص إلى إشارة",
+  "textToSignDesc": "اكتب النص وسنقوم بتحويله إلى إشارة تفاعلية.",
+  "tagInstant": "فوري",
+  "tagAI": "ذكاء اصطناعي",
+  "tagInteractive": "تفاعلي",
+  "tagDailyActivity": "نشاط يومي",
+  "simulatedHandSign": "إشارة يد",
+  "simulatedTranslation": "أنا اسمي  وأدرس في جامعة باي سويف، وفي السنة الأخيرة لي"
+}
