@@ -22,7 +22,7 @@ class BuildAppBar extends StatelessWidget {
         // مجموعة الأيقونات الموجودة على يسار الشاشة
         Row(
           children: [
-            _AppBarIcon(icon: Icons.refresh_rounded, onTap: () {}),
+            _AppBarIcon(icon: Icons.person_outline_rounded, onTap: () {}),
             const SizedBox(width: 8),
             _AppBarIcon(
               icon: Icons.notifications_outlined,

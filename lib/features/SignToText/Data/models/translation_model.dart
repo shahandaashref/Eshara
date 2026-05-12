@@ -5,19 +5,25 @@ class TranslationModel extends Translation {
     required super.originalSign,
     required super.translatedText,
     required super.createdAt,
+    super.score,
   });
 
   factory TranslationModel.fromJson(Map<String, dynamic> json) {
     return TranslationModel(
-      originalSign: json['original_sign'] as String,
-      translatedText: json['translated_text'] as String,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      // لو السيرفر مابيرجعش original_sign هنحط قيمة افتراضية
+      originalSign: json['original_sign'] as String? ?? 'فيديو إشارة',
+      translatedText: json['label'] as String? ?? 'غير معروف',
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : DateTime.now(),
+      score: (json['score'] as num?)?.toDouble(),
     );
   }
 
   Map<String, dynamic> toJson() => {
     'original_sign': originalSign,
-    'translated_text': translatedText,
+    'label': translatedText,
     'created_at': createdAt.toIso8601String(),
+    'score': score,
   };
 }

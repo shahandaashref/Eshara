@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class EsharaTheme {
   // ── Colors ────────────────────────────────────────────────────────────────
   static const Color primaryBlue  = Color(0xFF2563EB);
-  static const Color primaryDark  = Color(0xFF1D4ED8);
+  static const Color primaryDark  = Color(0xFF192A56);
   static const Color primaryLight = Color(0xFFEFF6FF);
   static const Color white        = Color(0xFFFFFFFF);
 

@@ -5,6 +5,10 @@ import 'package:eshara/features/Authentication/UI/Widget/google_media.dart';
 import 'package:eshara/features/Authentication/UI/Widget/header_app_bar_and_backgroun_auth.dart';
 import 'package:eshara/features/Authentication/UI/Widget/or_and_divider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../bloc/auth_bloc.dart';
+import '../bloc/auth_event.dart';
+import '../bloc/auth_state.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -14,7 +18,38 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  bool _isChecked=false;
+  bool _isChecked = false;
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  void _register() {
+    if (_formKey.currentState?.validate() ?? false) {
+      if (!_isChecked) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('يجب الموافقة على الشروط والأحكام')),
+        );
+        return;
+      }
+      context.read<AuthBloc>().add(
+        RegisterSubmittedEvent(
+          _nameController.text.trim(),
+          _emailController.text.trim(),
+          _passwordController.text,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -22,76 +57,122 @@ class _RegisterPageState extends State<RegisterPage> {
       body: headerAppBarAndBackgroundAuth(
         context,
 
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Text('إنشاء حساب جديد', style: theme.textTheme.displayLarge),
-
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: Image.asset(
-                      'assets/svg/voise.png',
-                      height: 80,
-                      width: 80,
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Text(
+                      'إنشاء حساب جديد',
+                      style: theme.textTheme.displayLarge,
                     ),
-                  ),
-                ],
-              ),
-              CustomTextFormField(
-                type: 'text',
-                label: 'الاسم كامل',
-                hintText: "shahanda",
-                icon: Icon(Icons.lock_outline),
-              ),
-              CustomTextFormField(
-                type: 'email',
-                label: 'الإيميل *',
-                hintText: 'user@example.com',
-                icon: Icon(Icons.email_outlined),
-              ),
 
-              CustomTextFormField(
-                type: 'password',
-                label: 'كلمة المرور *',
-                hintText: "********",
-                icon: Icon(Icons.lock_outline),
-              ),
-              Row(
-                children: [
-                  Checkbox(value: _isChecked, onChanged: (bool? newValue) {
-        setState(() {
-          _isChecked = newValue!;
-        });
-      },),
-                  Text('اوافق على جميع الشروط و الاحكام'),
-                ],
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                width: Helper.getResponsiveWidth(context, width: 300),
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: () {},
-                  child: const Text('إنشاء حساب'),
+                    Align(
+                      alignment: Alignment.topLeft,
+                      child: Image.asset(
+                        'assets/svg/voise.png',
+                        height: 80,
+                        width: 80,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 10),
-              orDividir(),
-              GoogleMediaIcons(onPressed: () {}),
-              const SizedBox(height: 10),
+                CustomTextFormField(
+                  controller: _nameController,
+                  type: 'text',
+                  label: 'الاسم كامل',
+                  hintText: "shahanda",
+                  icon: Icon(Icons.lock_outline),
+                ),
+                CustomTextFormField(
+                  controller: _emailController,
+                  type: 'email',
+                  label: 'الإيميل *',
+                  hintText: 'user@example.com',
+                  icon: Icon(Icons.email_outlined),
+                ),
 
-              AskIfSignInUp(
-                ontap: () {
-                    Navigator.pushNamed(context, '/login');
-                },
-                text: 'هل لديك حساب بالفعل؟',
-                textTap: ' سجل الدخول',
-              ),
-              const SizedBox(height: 10),
-            ],
+                CustomTextFormField(
+                  controller: _passwordController,
+                  type: 'password',
+                  label: 'كلمة المرور *',
+                  hintText: "********",
+                  icon: Icon(Icons.lock_outline),
+                ),
+                Row(
+                  children: [
+                    Checkbox(
+                      value: _isChecked,
+                      onChanged: (bool? newValue) {
+                        setState(() {
+                          _isChecked = newValue!;
+                        });
+                      },
+                    ),
+                    Text('اوافق على جميع الشروط و الاحكام'),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                BlocConsumer<AuthBloc, AuthState>(
+                  listener: (context, state) {
+                    if (state is AuthSuccess) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('تم إنشاء الحساب بنجاح ✅'),
+                        ),
+                      );
+
+                      // توجيه المستخدم لصفحة التحقق مع إرسال الإيميل
+                      Navigator.pushReplacementNamed(
+                        context,
+                        '/verify_email',
+                        arguments: _emailController.text.trim(),
+                      );
+                    } else if (state is AuthFailure) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(state.errorMessage)),
+                      );
+                    }
+                  },
+                  builder: (context, state) {
+                    final isLoading = state is AuthLoading;
+                    return SizedBox(
+                      width: Helper.getResponsiveWidth(context, width: 300),
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: isLoading ? null : _register,
+                        child: isLoading
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text('إنشاء حساب'),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 10),
+                orDividir(),
+                GoogleMediaIcons(onPressed: () {}),
+                const SizedBox(height: 10),
+
+                AskIfSignInUp(
+                  ontap: () {
+                    Navigator.pushReplacementNamed(context, '/login');
+                  },
+                  text: 'هل لديك حساب بالفعل؟',
+                  textTap: ' سجل الدخول',
+                ),
+                const SizedBox(height: 10),
+              ],
+            ),
           ),
         ),
       ),

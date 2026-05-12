@@ -1,4 +1,5 @@
 import 'package:eshara/Core/Helper/theme.dart';
+import 'package:eshara/Core/Widgets/app_bar.dart';
 import 'package:eshara/features/Notifications/UI/notifications_page.dart';
 import 'package:eshara/features/Profile/Ui/Widgets/app_info_card.dart';
 import 'package:eshara/features/Profile/Ui/Widgets/settings_section.dart';
@@ -12,7 +13,6 @@ import '../bloc/profile_event.dart';
 import '../bloc/profile_state.dart';
 import 'edit_profile_page.dart';
 
-
 /// [Page] — ProfilePage
 /// الصفحة الرئيسية للملف الشخصي.
 /// بتعرض بيانات المستخدم وإعدادات التطبيق وروابط الـ actions.
@@ -24,8 +24,6 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  int _navIndex = 4;
-
   @override
   void initState() {
     super.initState();
@@ -41,13 +39,12 @@ class _ProfilePageState extends State<ProfilePage> {
         backgroundColor: EsharaTheme.background,
         body: Column(
           children: [
-            _buildAppBar(context),
-            Expanded(
+            BuildAppBar(tt:TextTheme()),            Expanded(
               child: BlocConsumer<ProfileBloc, ProfileState>(
                 listener: (context, state) {
                   // لما يتسجل خروج نروح لصفحة اللوجين
                   if (state is ProfileLoggedOutState) {
-                    // Navigator.pushReplacementNamed(context, '/login');
+                    Navigator.pushReplacementNamed(context, '/login');
                   }
                   if (state is ProfileUpdatedState) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -69,11 +66,11 @@ class _ProfilePageState extends State<ProfilePage> {
 
                   // بناخد الـ user من أي state فيها user
                   final user = switch (state) {
-                    ProfileLoadedState s  => s.user,
+                    ProfileLoadedState s => s.user,
                     ProfileUpdatingState s => s.user,
                     ProfileUpdatedState s => s.user,
-                    ProfileErrorState s   => s.user,
-                    _                    => null,
+                    ProfileErrorState s => s.user,
+                    _ => null,
                   };
 
                   if (user == null) return const SizedBox();
@@ -82,10 +79,6 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
           ],
-        ),
-        bottomNavigationBar: AppBottomNav(
-          currentIndex: _navIndex,
-          onTap: (i) => setState(() => _navIndex = i),
         ),
       ),
     );
@@ -104,29 +97,46 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       child: Row(
         children: [
-          _IconBtn(icon: Icons.refresh_rounded, onTap: () {
-            context.read<ProfileBloc>().add(LoadProfileEvent());
-          }),
+          _IconBtn(
+            icon: Icons.refresh_rounded,
+            onTap: () {
+              context.read<ProfileBloc>().add(LoadProfileEvent());
+            },
+          ),
           const SizedBox(width: 8),
-          _IconBtn(icon: Icons.notifications_outlined, onTap: () {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const NotificationsPage()));
-          }),
+          _IconBtn(
+            icon: Icons.notifications_outlined,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const NotificationsPage()),
+              );
+            },
+          ),
           const Spacer(),
-          Row(children: [
-            Text(AppStrings.appName,
-                style: tt.headlineLarge!.copyWith(color: EsharaTheme.primaryBlue)),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                gradient: EsharaTheme.primaryGradient,
-                borderRadius: BorderRadius.circular(8),
+          Row(
+            children: [
+              Text(
+                AppStrings.appName,
+                style: tt.headlineLarge!.copyWith(
+                  color: EsharaTheme.primaryBlue,
+                ),
               ),
-              child: const Icon(Icons.sign_language_rounded,
-                  color: Colors.white, size: 16),
-            ),
-          ]),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  gradient: EsharaTheme.primaryGradient,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.sign_language_rounded,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -172,16 +182,23 @@ class _ProfilePageState extends State<ProfilePage> {
                             shape: BoxShape.circle,
                             border: Border.all(color: Colors.white, width: 2),
                           ),
-                          child: const Icon(Icons.edit_rounded,
-                              color: Colors.white, size: 14),
+                          child: const Icon(
+                            Icons.edit_rounded,
+                            color: Colors.white,
+                            size: 14,
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
-                Text(user.name, style: tt.displaySmall!.copyWith(
-                    color: EsharaTheme.textPrimary)),
+                Text(
+                  user.name,
+                  style: tt.displaySmall!.copyWith(
+                    color: EsharaTheme.textPrimary,
+                  ),
+                ),
                 const SizedBox(height: 4),
                 Text(user.email, style: tt.bodyMedium),
               ],
@@ -230,18 +247,26 @@ class _ProfilePageState extends State<ProfilePage> {
               children: [
                 Switch(
                   value: user.notificationsEnabled,
-                  activeColor: EsharaTheme.primaryBlue,
+                  activeThumbColor: EsharaTheme.primaryBlue,
                   onChanged: (val) {
-                    context.read<ProfileBloc>()
-                        .add(ToggleNotificationsEvent(enabled: val));
+                    context.read<ProfileBloc>().add(
+                      ToggleNotificationsEvent(enabled: val),
+                    );
                   },
                 ),
                 const Spacer(),
-                Text('الإشعارات', style: tt.titleMedium!.copyWith(
-                    color: EsharaTheme.textPrimary)),
+                Text(
+                  'الإشعارات',
+                  style: tt.titleMedium!.copyWith(
+                    color: EsharaTheme.textPrimary,
+                  ),
+                ),
                 const SizedBox(width: 8),
-                const Icon(Icons.notifications_outlined,
-                    color: EsharaTheme.primaryBlue, size: 20),
+                const Icon(
+                  Icons.notifications_outlined,
+                  color: EsharaTheme.primaryBlue,
+                  size: 20,
+                ),
               ],
             ),
           ),
@@ -271,8 +296,11 @@ class _ProfilePageState extends State<ProfilePage> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.error_outline_rounded,
-              size: 64, color: EsharaTheme.error),
+          const Icon(
+            Icons.error_outline_rounded,
+            size: 64,
+            color: EsharaTheme.error,
+          ),
           const SizedBox(height: 16),
           Text(message, style: Theme.of(context).textTheme.bodyLarge),
           const SizedBox(height: 24),
@@ -344,13 +372,19 @@ class _LogoutSheet extends StatelessWidget {
                 color: EsharaTheme.error.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.logout_rounded,
-                  color: EsharaTheme.error, size: 32),
+              child: const Icon(
+                Icons.logout_rounded,
+                color: EsharaTheme.error,
+                size: 32,
+              ),
             ),
             const SizedBox(height: 16),
-            Text('تسجيل الخروج',
-                style: tt.headlineMedium!.copyWith(
-                    color: EsharaTheme.textPrimary)),
+            Text(
+              'تسجيل الخروج',
+              style: tt.headlineMedium!.copyWith(
+                color: EsharaTheme.textPrimary,
+              ),
+            ),
             const SizedBox(height: 8),
             Text(
               'هل أنت متأكد من رغبتك في تسجيل الخروج؟',

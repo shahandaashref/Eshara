@@ -1,4 +1,5 @@
 import 'package:eshara/Core/Helper/helper.dart';
+import 'package:eshara/Core/Helper/theme.dart';
 import 'package:flutter/material.dart';
 
 Widget headerAppBarAndBackgroundAuth(
@@ -10,7 +11,7 @@ Widget headerAppBarAndBackgroundAuth(
   return Stack(
     children: [
       Container(
-        color: theme.colorScheme.secondary,
+        color: EsharaTheme.background,
         width: double.infinity,
         height: double.infinity,
       ),
@@ -23,7 +24,7 @@ Widget headerAppBarAndBackgroundAuth(
               padding: const EdgeInsets.symmetric(vertical: 20.0),
               child: Center(
                 child: Image.asset(
-                  'assets/logo/Frame 17.png',
+                  'assets/logo/authlogo.png',
                   height: 100,
                   fit: BoxFit.contain,
                 ),
@@ -34,7 +35,7 @@ Widget headerAppBarAndBackgroundAuth(
             child: Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary,
+                color: EsharaTheme.primaryDark,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(60),
                   topRight: Radius.circular(20),
@@ -45,7 +46,7 @@ Widget headerAppBarAndBackgroundAuth(
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.surface,
+                  color: EsharaTheme.primaryBlue,
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(60),
                     topRight: Radius.circular(20),

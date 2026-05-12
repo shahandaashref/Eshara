@@ -2,6 +2,7 @@ import 'package:eshara/Core/Helper/theme.dart';
 import 'package:eshara/Core/Widgets/app_bar.dart';
 import 'package:eshara/features/Home/UI/Widget/feature_card.dart';
 import 'package:eshara/features/SignToText/UI/Screens/sign_to_text_page.dart';
+import 'package:eshara/features/Text_to_sign/Ui/Screens/text_to_sign_page.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/widgets/app_bottom_nav.dart';
@@ -17,9 +18,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
-  // متغير لتخزين الفهرس (Index) الحالي لمعرفة أي زر تم اختياره في الشريط السفلي
-  int _currentNavIndex = 0;
-
   // متحكمات الأنيميشن (Animation) لعمل تأثيرات عند فتح الصفحة
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
@@ -67,7 +65,7 @@ class _HomePageState extends State<HomePage>
         body: Column(
           children: [
             // استدعاء وبناء شريط التطبيق العلوي (AppBar)
-            BuildAppBar(tt:tt),
+            BuildAppBar(tt: tt),
 
             // باقي محتوى الصفحة القابل للتمدد
             Expanded(
@@ -81,17 +79,9 @@ class _HomePageState extends State<HomePage>
             ),
           ],
         ),
-        // شريط التنقل السفلي (Bottom Navigation Bar)
-        bottomNavigationBar: AppBottomNav(
-          currentIndex: _currentNavIndex,
-          onTap: (index) => setState(() => _currentNavIndex = index),
-        ),
       ),
     );
   }
-
- 
-  
 
   /// دالة بناء محتوى الصفحة الأساسي (الجزء الموجود أسفل الـ AppBar)
   /// يتم وضعه داخل SingleChildScrollView ليصبح قابل للتمرير (Scrollable) إذا كانت الشاشة صغيرة
@@ -123,7 +113,7 @@ class _HomePageState extends State<HomePage>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: EsharaTheme.primaryBlue.withOpacity(0.3),
+            color: EsharaTheme.background.withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -188,7 +178,7 @@ class _HomePageState extends State<HomePage>
           title: AppStrings.textToSign,
           description: AppStrings.textToSignDesc,
           tags: const ['تفاعلي', 'نشاط يومي'],
-          onTap: () {}, // لم يتم برمجة مسار هذه الشاشة بعد
+          onTap: ()=>_navigateToTextToSign(), // لم يتم برمجة مسار هذه الشاشة بعد
         ),
       ],
     );
@@ -201,7 +191,12 @@ class _HomePageState extends State<HomePage>
       MaterialPageRoute(builder: (_) => const SignToTextPage()),
     );
   }
+
+  //
+   void _navigateToTextToSign() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const TextToSignPage()),
+    );
+  }
 }
-
-
-

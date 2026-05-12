@@ -9,10 +9,7 @@ class IntrodactionScrean3 extends StatelessWidget {
   Widget build(BuildContext context) {
     return CustomIntroScrean(
       onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => LoginPage()),
-        );
+        Navigator.pushReplacementNamed(context, '/login');
       },
 
       title: 'حان وقت البدء!',

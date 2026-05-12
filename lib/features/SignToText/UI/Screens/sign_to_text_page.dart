@@ -1,4 +1,7 @@
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import 'package:eshara/Core/Helper/theme.dart';
+import 'package:eshara/Core/Widgets/app_bar.dart';
 import 'package:eshara/Core/di/injection_container.dart';
 import 'package:eshara/features/SignToText/UI/Widget/camera_preview_widget.dart';
 import 'package:eshara/features/SignToText/UI/Widget/processing_indicator.dart';
@@ -6,11 +9,9 @@ import 'package:eshara/features/SignToText/UI/Widget/translation_result_card.dar
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../core/constants/app_strings.dart';
-import '../../../../../core/widgets/app_bottom_nav.dart';
 import '../bloc/sign_bloc.dart';
 import '../bloc/sign_event.dart';
 import '../bloc/sign_state.dart';
-
 
 class SignToTextPage extends StatelessWidget {
   const SignToTextPage({super.key});
@@ -32,7 +33,36 @@ class _SignToTextView extends StatefulWidget {
 }
 
 class _SignToTextViewState extends State<_SignToTextView> {
-  int _navIndex = 1;
+  final ImagePicker _picker = ImagePicker();
+
+  Future<void> _pickAndAnalyzeVideo() async {
+    try {
+      // فتح الاستوديو لاختيار فيديو
+      final XFile? pickedVideo = await _picker.pickVideo(
+        source: ImageSource.gallery,
+      );
+
+      if (pickedVideo != null) {
+        File videoFile = File(pickedVideo.path);
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تم اختيار الفيديو، جاري التحليل...')),
+        );
+
+        // نرسل مسار الفيديو للـ BLoC عشان يبدأ الـ Processing
+        context.read<SignBloc>().add(
+          StopRecordingEvent(videoPath: videoFile.path),
+        );
+      }
+    } catch (e) {
+      debugPrint("حدث خطأ أثناء اختيار الفيديو: $e");
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('حدث خطأ أثناء محاولة فتح الاستوديو')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +74,34 @@ class _SignToTextViewState extends State<_SignToTextView> {
         backgroundColor: EsharaTheme.background,
         body: Column(
           children: [
-            _buildAppBar(context, tt),
+            BuildAppBar(tt: tt),
+            SizedBox(height: MediaQuery.of(context).padding.top),
+            Align(
+              alignment: Alignment.topLeft,
+              child:
+                  // Back button
+                  GestureDetector(
+                    onTap: () => Navigator.maybePop(context),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          Text('رجوع', style: tt.bodyMedium),
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: 18,
+                            color: EsharaTheme.textPrimary,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+            ),
+
             Expanded(
               child: BlocBuilder<SignBloc, SignState>(
                 builder: (context, state) {
@@ -56,10 +113,6 @@ class _SignToTextViewState extends State<_SignToTextView> {
               ),
             ),
           ],
-        ),
-        bottomNavigationBar: AppBottomNav(
-          currentIndex: _navIndex,
-          onTap: (i) => setState(() => _navIndex = i),
         ),
       ),
     );
@@ -77,22 +130,6 @@ class _SignToTextViewState extends State<_SignToTextView> {
       ),
       child: Row(
         children: [
-          // Back button
-          GestureDetector(
-            onTap: () => Navigator.maybePop(context),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: EsharaTheme.surfaceVariant,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 18,
-                color: EsharaTheme.textPrimary,
-              ),
-            ),
-          ),
           const Spacer(),
           Text(AppStrings.signToTextPageTitle, style: tt.headlineLarge),
           const Spacer(),
@@ -151,11 +188,30 @@ class _SignToTextViewState extends State<_SignToTextView> {
 
           // Action buttons
           if (!isRecording)
-            ElevatedButton.icon(
-              onPressed: () =>
-                  context.read<SignBloc>().add(StartRecordingEvent()),
-              icon: const Icon(Icons.videocam_rounded, size: 20),
-              label: Text(AppStrings.startRecognition),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () =>
+                        context.read<SignBloc>().add(StartRecordingEvent()),
+                    icon: const Icon(Icons.videocam_rounded, size: 20),
+                    label: Text(AppStrings.startRecognition),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _pickAndAnalyzeVideo,
+                    icon: const Icon(Icons.upload_file_rounded, size: 20),
+                    label: const Text('رفع فيديو'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: EsharaTheme.surfaceVariant,
+                      foregroundColor: EsharaTheme.primaryBlue,
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+              ],
             )
           else
             Row(
@@ -175,8 +231,8 @@ class _SignToTextViewState extends State<_SignToTextView> {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () => context.read<SignBloc>().add(
-                          StopRecordingEvent(videoPath: 'mock_path'),
-                        ),
+                      StopRecordingEvent(videoPath: 'mock_path'),
+                    ),
                     child: Text(AppStrings.stopRecording),
                   ),
                 ),
@@ -194,7 +250,10 @@ class _SignToTextViewState extends State<_SignToTextView> {
 
   // ── State: Processing ─────────────────────────────────────────────────────
   Widget _buildProcessingBody(
-      BuildContext context, SignProcessingState state, TextTheme tt) {
+    BuildContext context,
+    SignProcessingState state,
+    TextTheme tt,
+  ) {
     return SingleChildScrollView(
       key: const ValueKey('processing'),
       padding: const EdgeInsets.all(20),
@@ -240,21 +299,26 @@ class _SignToTextViewState extends State<_SignToTextView> {
 
   // ── State: Result ─────────────────────────────────────────────────────────
   Widget _buildResultBody(
-      BuildContext context, SignResultState state, TextTheme tt) {
+    BuildContext context,
+    SignResultState state,
+    TextTheme tt,
+  ) {
     return SingleChildScrollView(
       key: const ValueKey('result'),
       padding: const EdgeInsets.all(20),
       child: TranslationResultCard(
         translation: state.translation,
-        onNewTranslation: () =>
-            context.read<SignBloc>().add(ResetEvent()),
+        onNewTranslation: () => context.read<SignBloc>().add(ResetEvent()),
       ),
     );
   }
 
   // ── State: Error ──────────────────────────────────────────────────────────
   Widget _buildErrorBody(
-      BuildContext context, SignErrorState state, TextTheme tt) {
+    BuildContext context,
+    SignErrorState state,
+    TextTheme tt,
+  ) {
     return Center(
       key: const ValueKey('error'),
       child: Padding(
@@ -262,15 +326,20 @@ class _SignToTextViewState extends State<_SignToTextView> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline_rounded,
-                size: 64, color: EsharaTheme.error),
+            const Icon(
+              Icons.error_outline_rounded,
+              size: 64,
+              color: EsharaTheme.error,
+            ),
             const SizedBox(height: 16),
-            Text(state.message,
-                style: tt.bodyLarge, textAlign: TextAlign.center),
+            Text(
+              state.message,
+              style: tt.bodyLarge,
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: () =>
-                  context.read<SignBloc>().add(ResetEvent()),
+              onPressed: () => context.read<SignBloc>().add(ResetEvent()),
               child: const Text('حاول مرة أخرى'),
             ),
           ],
@@ -301,13 +370,13 @@ class _SignToTextViewState extends State<_SignToTextView> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Text(
-                AppStrings.signLanguage,
-                style: tt.bodySmall,
-              ),
+              Text(AppStrings.signLanguage, style: tt.bodySmall),
               const SizedBox(width: 8),
-              const Icon(Icons.translate_rounded,
-                  size: 16, color: EsharaTheme.primaryBlue),
+              const Icon(
+                Icons.translate_rounded,
+                size: 16,
+                color: EsharaTheme.primaryBlue,
+              ),
             ],
           ),
         ),

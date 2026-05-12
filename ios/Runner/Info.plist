@@ -49,5 +49,9 @@
 		<true/>
 		<key>UIViewControllerBasedStatusBarAppearance</key>
 		<false/>
+		<key>NSCameraUsageDescription</key>
+		<string>يحتاج التطبيق للوصول إلى الكاميرا لترجمة لغة الإشارة</string>
+		<key>NSMicrophoneUsageDescription</key>
+		<string>يحتاج التطبيق للوصول إلى الميكروفون لتسجيل الفيديو</string>
 	</dict>
 </plist>
