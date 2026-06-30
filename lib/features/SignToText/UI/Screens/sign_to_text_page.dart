@@ -1,14 +1,18 @@
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import 'package:camera/camera.dart';
+import 'package:video_compress/video_compress.dart';
 import 'package:eshara/Core/Helper/theme.dart';
+import 'package:eshara/Core/Helper/snackbar_helper.dart';
 import 'package:eshara/Core/Widgets/app_bar.dart';
+import 'package:video_player/video_player.dart';
 import 'package:eshara/Core/di/injection_container.dart';
 import 'package:eshara/features/SignToText/UI/Widget/camera_preview_widget.dart';
 import 'package:eshara/features/SignToText/UI/Widget/processing_indicator.dart';
 import 'package:eshara/features/SignToText/UI/Widget/translation_result_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../../core/constants/app_strings.dart';
+import 'package:eshara/Core/constants/app_strings.dart';
 import '../bloc/sign_bloc.dart';
 import '../bloc/sign_event.dart';
 import '../bloc/sign_state.dart';
@@ -34,6 +38,103 @@ class _SignToTextView extends StatefulWidget {
 
 class _SignToTextViewState extends State<_SignToTextView> {
   final ImagePicker _picker = ImagePicker();
+  String? _currentVideoPath;
+  CameraController? _controller;
+  bool _isCameraInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeCamera();
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    _deleteCurrentVideoFile();
+    super.dispose();
+  }
+
+  /// دالة لحذف ملف الفيديو المؤقت من الجهاز لتوفير المساحة
+  Future<void> _deleteCurrentVideoFile() async {
+    final path = _currentVideoPath;
+    if (path != null) {
+      try {
+        final file = File(path);
+        if (await file.exists()) {
+          await file.delete();
+          debugPrint('تم حذف الفيديو المؤقت بنجاح: $path');
+        }
+        await VideoCompress.deleteAllCache(); // مسح الـ Cache الخاص بمكتبة الضغط
+      } catch (e) {
+        debugPrint('تعذر حذف الفيديو المؤقت: $e');
+      }
+    }
+  }
+
+  /// تهيئة الكاميرا الأمامية
+  Future<void> _initializeCamera() async {
+    try {
+      final cameras = await availableCameras();
+      if (cameras.isEmpty) {
+        debugPrint('لم يتم العثور على كاميرات');
+        if (!mounted) return;
+        SnackbarHelper.showCustomSnackBar(
+          context,
+          'لم يتم العثور على كاميرات متاحة',
+          isError: true,
+        );
+        return;
+      }
+
+      // البحث عن الكاميرا الأمامية واختيارها، أو اختيار أول كاميرا في حال عدم وجودها
+      final frontCamera = cameras.firstWhere(
+        (camera) => camera.lensDirection == CameraLensDirection.front,
+        orElse: () => cameras.first,
+      );
+
+      _controller = CameraController(
+        frontCamera,
+        ResolutionPreset.high,
+        enableAudio: false, // لا نحتاج للصوت
+      );
+
+      await _controller!.initialize();
+
+      if (mounted) setState(() => _isCameraInitialized = true);
+    } catch (e) {
+      debugPrint('خطأ في تشغيل الكاميرا: $e');
+      if (!mounted) return;
+      SnackbarHelper.showCustomSnackBar(
+        context,
+        'حدث خطأ أثناء تشغيل الكاميرا',
+        isError: true,
+      );
+    }
+  }
+
+  /// دالة مساعدة لضغط الفيديو
+  Future<String?> _compressVideo(String videoPath) async {
+    try {
+      if (mounted) {
+        SnackbarHelper.showCustomSnackBar(
+          context,
+          'جاري ضغط الفيديو لتسريع الرفع...',
+        );
+      }
+      final MediaInfo? info = await VideoCompress.compressVideo(
+        videoPath,
+        quality: VideoQuality
+            .DefaultQuality, // جودة افتراضية (متوسطة) لتقليل الحجم بشكل كبير
+        deleteOrigin:
+            false, // سنتركه false لأننا نحذف الفيديوهات المؤقتة بأنفسنا
+      );
+      return info?.file?.path;
+    } catch (e) {
+      debugPrint('خطأ أثناء ضغط الفيديو: $e');
+      return null;
+    }
+  }
 
   Future<void> _pickAndAnalyzeVideo() async {
     try {
@@ -46,21 +147,72 @@ class _SignToTextViewState extends State<_SignToTextView> {
         File videoFile = File(pickedVideo.path);
 
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم اختيار الفيديو، جاري التحليل...')),
-        );
+        setState(() {
+          _currentVideoPath = videoFile.path;
+        });
 
-        // نرسل مسار الفيديو للـ BLoC عشان يبدأ الـ Processing
-        context.read<SignBloc>().add(
-          StopRecordingEvent(videoPath: videoFile.path),
-        );
+        // ضغط الفيديو قبل الإرسال
+        String pathToSend = videoFile.path;
+        final compressedPath = await _compressVideo(pathToSend);
+        if (compressedPath != null) {
+          pathToSend = compressedPath;
+          if (mounted) setState(() => _currentVideoPath = pathToSend);
+        }
+
+        if (!mounted) return;
+        context.read<SignBloc>().add(StopRecordingEvent(videoPath: pathToSend));
       }
     } catch (e) {
       debugPrint("حدث خطأ أثناء اختيار الفيديو: $e");
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('حدث خطأ أثناء محاولة فتح الاستوديو')),
+      SnackbarHelper.showCustomSnackBar(
+        context,
+        'حدث خطأ أثناء محاولة فتح الاستوديو',
+        isError: true,
       );
+    }
+  }
+
+  /// يبدأ تسجيل الفيديو ويرسل حدث للـ BLoC
+  Future<void> _startRecording() async {
+    if (!_isCameraInitialized ||
+        _controller == null ||
+        _controller!.value.isRecordingVideo) {
+      return;
+    }
+    try {
+      await _controller!.startVideoRecording();
+      if (!mounted) return;
+      context.read<SignBloc>().add(StartRecordingEvent());
+    } catch (e) {
+      debugPrint('خطأ عند بدء التسجيل: $e');
+    }
+  }
+
+  /// يوقف تسجيل الفيديو ويستخرج المسار ثم يرسله للـ BLoC
+  Future<void> _stopRecording() async {
+    if (_controller == null || !_controller!.value.isRecordingVideo) {
+      return;
+    }
+    try {
+      final XFile videoFile = await _controller!.stopVideoRecording();
+      if (!mounted) return;
+      setState(() {
+        _currentVideoPath = videoFile.path;
+      });
+
+      // ضغط الفيديو قبل الإرسال
+      String pathToSend = videoFile.path;
+      final compressedPath = await _compressVideo(pathToSend);
+      if (compressedPath != null) {
+        pathToSend = compressedPath;
+        if (mounted) setState(() => _currentVideoPath = pathToSend);
+      }
+
+      if (!mounted) return;
+      context.read<SignBloc>().add(StopRecordingEvent(videoPath: pathToSend));
+    } catch (e) {
+      debugPrint('خطأ عند إيقاف التسجيل: $e');
     }
   }
 
@@ -76,31 +228,6 @@ class _SignToTextViewState extends State<_SignToTextView> {
           children: [
             BuildAppBar(tt: tt),
             SizedBox(height: MediaQuery.of(context).padding.top),
-            Align(
-              alignment: Alignment.topLeft,
-              child:
-                  // Back button
-                  GestureDetector(
-                    onTap: () => Navigator.maybePop(context),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(
-                        children: [
-                          Text('رجوع', style: tt.bodyMedium),
-                          const SizedBox(width: 4),
-                          const Icon(
-                            Icons.arrow_forward_ios_rounded,
-                            size: 18,
-                            color: EsharaTheme.textPrimary,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-            ),
 
             Expanded(
               child: BlocBuilder<SignBloc, SignState>(
@@ -114,39 +241,6 @@ class _SignToTextViewState extends State<_SignToTextView> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  // ── AppBar ────────────────────────────────────────────────────────────────
-  Widget _buildAppBar(BuildContext context, TextTheme tt) {
-    return Container(
-      color: EsharaTheme.surface,
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 8,
-        bottom: 12,
-        right: 20,
-        left: 20,
-      ),
-      child: Row(
-        children: [
-          const Spacer(),
-          Text(AppStrings.signToTextPageTitle, style: tt.headlineLarge),
-          const Spacer(),
-          // Refresh
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: EsharaTheme.surfaceVariant,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(
-              Icons.refresh_rounded,
-              size: 18,
-              color: EsharaTheme.textSecondary,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -181,7 +275,10 @@ class _SignToTextViewState extends State<_SignToTextView> {
           // Camera preview
           SizedBox(
             height: 280,
-            child: CameraPreviewWidget(isRecording: isRecording),
+            child: CameraPreviewWidget(
+              controller: _controller,
+              isRecording: isRecording,
+            ),
           ),
 
           const SizedBox(height: 20),
@@ -192,8 +289,7 @@ class _SignToTextViewState extends State<_SignToTextView> {
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () =>
-                        context.read<SignBloc>().add(StartRecordingEvent()),
+                    onPressed: _isCameraInitialized ? _startRecording : null,
                     icon: const Icon(Icons.videocam_rounded, size: 20),
                     label: Text(AppStrings.startRecognition),
                   ),
@@ -218,8 +314,13 @@ class _SignToTextViewState extends State<_SignToTextView> {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () =>
-                        context.read<SignBloc>().add(CancelRecordingEvent()),
+                    onPressed: () {
+                      _deleteCurrentVideoFile();
+                      setState(() {
+                        _currentVideoPath = null;
+                      });
+                      context.read<SignBloc>().add(CancelRecordingEvent());
+                    },
                     style: OutlinedButton.styleFrom(
                       foregroundColor: EsharaTheme.error,
                       side: const BorderSide(color: EsharaTheme.error),
@@ -230,19 +331,12 @@ class _SignToTextViewState extends State<_SignToTextView> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () => context.read<SignBloc>().add(
-                      StopRecordingEvent(videoPath: 'mock_path'),
-                    ),
+                    onPressed: _stopRecording,
                     child: Text(AppStrings.stopRecording),
                   ),
                 ),
               ],
             ),
-
-          const SizedBox(height: 24),
-
-          // Translation results placeholder
-          _buildResultsPlaceholder(tt),
         ],
       ),
     );
@@ -266,7 +360,7 @@ class _SignToTextViewState extends State<_SignToTextView> {
           Container(
             height: 280,
             decoration: BoxDecoration(
-              color: const Color(0xFF1A1A2E),
+              color: const Color.fromARGB(255, 237, 237, 241),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Center(
@@ -281,17 +375,19 @@ class _SignToTextViewState extends State<_SignToTextView> {
 
           // Cancel button
           OutlinedButton(
-            onPressed: () =>
-                context.read<SignBloc>().add(CancelRecordingEvent()),
+            onPressed: () {
+              _deleteCurrentVideoFile();
+              setState(() {
+                _currentVideoPath = null;
+              });
+              context.read<SignBloc>().add(CancelRecordingEvent());
+            },
             style: OutlinedButton.styleFrom(
               foregroundColor: EsharaTheme.error,
               side: const BorderSide(color: EsharaTheme.error),
             ),
             child: Text(AppStrings.cancel),
           ),
-
-          const SizedBox(height: 24),
-          _buildResultsPlaceholder(tt),
         ],
       ),
     );
@@ -306,9 +402,23 @@ class _SignToTextViewState extends State<_SignToTextView> {
     return SingleChildScrollView(
       key: const ValueKey('result'),
       padding: const EdgeInsets.all(20),
-      child: TranslationResultCard(
-        translation: state.translation,
-        onNewTranslation: () => context.read<SignBloc>().add(ResetEvent()),
+      child: Column(
+        children: [
+          if (_currentVideoPath != null) ...[
+            _VideoPlayerWidget(videoPath: _currentVideoPath!),
+            const SizedBox(height: 20),
+          ],
+          TranslationResultCard(
+            translation: state.translation,
+            onNewTranslation: () {
+              _deleteCurrentVideoFile();
+              setState(() {
+                _currentVideoPath = null;
+              });
+              context.read<SignBloc>().add(ResetEvent());
+            },
+          ),
+        ],
       ),
     );
   }
@@ -338,49 +448,132 @@ class _SignToTextViewState extends State<_SignToTextView> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () => context.read<SignBloc>().add(ResetEvent()),
-              child: const Text('حاول مرة أخرى'),
-            ),
+            if (_currentVideoPath != null) ...[
+              ElevatedButton.icon(
+                onPressed: () {
+                  SnackbarHelper.showCustomSnackBar(
+                    context,
+                    'جاري إعادة رفع الفيديو...',
+                  );
+                  // إعادة إرسال الحدث بنفس مسار الفيديو الحالي
+                  context.read<SignBloc>().add(
+                    StopRecordingEvent(videoPath: _currentVideoPath!),
+                  );
+                },
+                icon: const Icon(Icons.refresh_rounded, size: 20),
+                label: const Text('إعادة المحاولة بنفس الفيديو'),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: () {
+                  _deleteCurrentVideoFile();
+                  setState(() {
+                    _currentVideoPath = null;
+                  });
+                  context.read<SignBloc>().add(ResetEvent());
+                },
+                child: const Text('تسجيل فيديو جديد'),
+              ),
+            ] else
+              ElevatedButton(
+                onPressed: () => context.read<SignBloc>().add(ResetEvent()),
+                child: const Text('حاول مرة أخرى'),
+              ),
           ],
         ),
       ),
     );
   }
+}
 
-  // ── Results placeholder (under camera) ───────────────────────────────────
-  Widget _buildResultsPlaceholder(TextTheme tt) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Text(
-          AppStrings.translationResults,
-          style: tt.headlineMedium!.copyWith(color: EsharaTheme.textPrimary),
+// ── Video Player Widget ───────────────────────────────────────────────────
+class _VideoPlayerWidget extends StatefulWidget {
+  final String videoPath;
+
+  const _VideoPlayerWidget({required this.videoPath});
+
+  @override
+  State<_VideoPlayerWidget> createState() => _VideoPlayerWidgetState();
+}
+
+class _VideoPlayerWidgetState extends State<_VideoPlayerWidget> {
+  VideoPlayerController? _controller;
+  bool _hasError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializePlayer();
+  }
+
+  Future<void> _initializePlayer() async {
+    final file = File(widget.videoPath);
+    if (!await file.exists()) {
+      if (mounted) setState(() => _hasError = true);
+      return;
+    }
+
+    _controller = VideoPlayerController.file(file);
+    try {
+      await _controller!.initialize();
+      _controller!.setLooping(true);
+      _controller!.play();
+      if (mounted) setState(() {});
+    } catch (e) {
+      if (mounted) setState(() => _hasError = true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_hasError) {
+      return Container(
+        height: 200,
+        decoration: BoxDecoration(
+          color: EsharaTheme.surfaceVariant,
+          borderRadius: BorderRadius.circular(16),
         ),
-        const SizedBox(height: 10),
-        Container(
-          width: double.infinity,
-          height: 80,
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: EsharaTheme.surfaceVariant,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: EsharaTheme.border),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Text(AppStrings.signLanguage, style: tt.bodySmall),
-              const SizedBox(width: 8),
-              const Icon(
-                Icons.translate_rounded,
-                size: 16,
-                color: EsharaTheme.primaryBlue,
-              ),
-            ],
+        child: const Center(
+          child: Text(
+            'تعذر تشغيل الفيديو',
+            style: TextStyle(color: EsharaTheme.error),
           ),
         ),
-      ],
+      );
+    }
+
+    if (_controller == null || !_controller!.value.isInitialized) {
+      return Container(
+        height: 280,
+        decoration: BoxDecoration(
+          color: const Color.fromARGB(255, 19, 19, 26),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(color: EsharaTheme.primaryBlue),
+        ),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        constraints: const BoxConstraints(maxHeight: 280),
+        width: double.infinity,
+        color: const Color.fromARGB(255, 41, 41, 57),
+        child: Center(
+          child: AspectRatio(
+            aspectRatio: _controller!.value.aspectRatio,
+            child: VideoPlayer(_controller!),
+          ),
+        ),
+      ),
     );
   }
 }

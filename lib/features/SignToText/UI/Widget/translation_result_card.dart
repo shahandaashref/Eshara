@@ -23,24 +23,24 @@ class TranslationResultCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // AI avatar
-        ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            height: 200,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF0F172A), Color(0xFF1E3A5F)],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
-            child: const Center(
-              child: Icon(Icons.smart_toy_rounded, size: 72, color: Colors.white54),
-            ),
-          ),
-        ),
+        // ClipRRect(
+        //   borderRadius: BorderRadius.circular(16),
+        //   child: Container(
+        //     height: 200,
+        //     decoration: const BoxDecoration(
+        //       gradient: LinearGradient(
+        //         colors: [Color(0xFF0F172A), Color(0xFF1E3A5F)],
+        //         begin: Alignment.topCenter,
+        //         end: Alignment.bottomCenter,
+        //       ),
+        //     ),
+        //     child: const Center(
+        //       child: Icon(Icons.smart_toy_rounded, size: 72, color: Colors.white54),
+        //     ),
+        //   ),
+        // ),
 
-        const SizedBox(height: 16),
+        // const SizedBox(height: 16),
 
         // Result label
         Text(

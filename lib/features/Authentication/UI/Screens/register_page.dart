@@ -1,6 +1,7 @@
 import 'package:eshara/Core/Helper/helper.dart';
 import 'package:eshara/features/Authentication/UI/Widget/ask_if_sign_in_up.dart';
 import 'package:eshara/features/Authentication/UI/Widget/custom_text_form_field.dart';
+import 'package:eshara/Core/Helper/snackbar_helper.dart';
 import 'package:eshara/features/Authentication/UI/Widget/google_media.dart';
 import 'package:eshara/features/Authentication/UI/Widget/header_app_bar_and_backgroun_auth.dart';
 import 'package:eshara/features/Authentication/UI/Widget/or_and_divider.dart';
@@ -35,8 +36,10 @@ class _RegisterPageState extends State<RegisterPage> {
   void _register() {
     if (_formKey.currentState?.validate() ?? false) {
       if (!_isChecked) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('يجب الموافقة على الشروط والأحكام')),
+        SnackbarHelper.showCustomSnackBar(
+          context,
+          'يجب الموافقة على الشروط والأحكام',
+          isError: true,
         );
         return;
       }
@@ -119,11 +122,11 @@ class _RegisterPageState extends State<RegisterPage> {
                 BlocConsumer<AuthBloc, AuthState>(
                   listener: (context, state) {
                     if (state is AuthSuccess) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('تم إنشاء الحساب بنجاح ✅'),
-                        ),
-                      );
+                      SnackbarHelper.showCustomSnackBar(
+                        context,
+                        'تم إنشاء الحساب بنجاح ✅',
+                        isError: false,
+                      ); // هنا تم استخدام SnackbarHelper
 
                       // توجيه المستخدم لصفحة التحقق مع إرسال الإيميل
                       Navigator.pushReplacementNamed(
@@ -132,9 +135,30 @@ class _RegisterPageState extends State<RegisterPage> {
                         arguments: _emailController.text.trim(),
                       );
                     } else if (state is AuthFailure) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(state.errorMessage)),
-                      );
+                      SnackbarHelper.showCustomSnackBar(
+                        context,
+                        state.errorMessage,
+                        isError: true,
+                      ); // هنا تم استخدام SnackbarHelper
+
+                      // التحقق إذا كان الخطأ يعني أن الإيميل موجود بالفعل
+                      // (يجب أن يكون الـ API يرجع رسالة خطأ واضحة مثل هذه)
+                      if (state.errorMessage.contains(
+                            'البريد الإلكتروني موجود بالفعل',
+                          ) ||
+                          state.errorMessage.contains(
+                            'The email has already been taken',
+                          ) ||
+                          state.errorMessage.contains('Email already exists')) {
+                        // توجيه المستخدم لصفحة التحقق من الإيميل بدلاً من التسجيل مرة أخرى
+                        if (_emailController.text.trim().isNotEmpty) {
+                          Navigator.pushReplacementNamed(
+                            context,
+                            '/verify_email',
+                            arguments: _emailController.text.trim(),
+                          );
+                        }
+                      }
                     }
                   },
                   builder: (context, state) {

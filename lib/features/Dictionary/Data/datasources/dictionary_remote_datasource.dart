@@ -12,23 +12,25 @@ abstract class DictionaryRemoteDataSource {
 class DictionaryRemoteDataSourceImpl implements DictionaryRemoteDataSource {
   final Dio dio;
 
+  // (Cache) متغير لتخزين البيانات محلياً عشان ما نعملش Request مع كل فلتر
+  List<SignModel>? _cachedSigns;
+
   DictionaryRemoteDataSourceImpl({required this.dio});
 
-  @override
-  Future<List<SignModel>> getSignsByCategory(String category) async {
-    try {
-      // ملحوظة: استبدلي الرابط برابط الـ API الحقيقي بتاع مشروع SignAvatars
-      final response = await dio.get(
-        'https://api.eshara.com/signs',
-        queryParameters: {'category': category},
-      );
+  // دالة مساعدة بتجيب كل الكلمات من الباك إند مرة واحدة وتحفظها
+  Future<List<SignModel>> _fetchAllSigns() async {
+    // لو البيانات متحملة قبل كده، هنرجعها فوراً ومش هنكلم الباك إند تاني
+    if (_cachedSigns != null) return _cachedSigns!;
 
-      // Dio throws an exception for non-2xx status codes by default
-      return (response.data as List)
+    try {
+      final response = await dio.get(
+        'https://your-api-url.com/api/words',
+      ); // 🔴 رابط جلب كل الكلمات
+      _cachedSigns = (response.data as List)
           .map((json) => SignModel.fromJson(json))
           .toList();
+      return _cachedSigns!;
     } on DioException catch (e) {
-      // يمكنك التعامل مع أنواع الأخطاء المختلفة هنا (مثل الاتصال، الوقت المستقطع، إلخ)
       throw Exception('فشل تحميل القائمة: ${e.message}');
     } catch (e) {
       throw Exception('حدث خطأ غير متوقع');
@@ -36,20 +38,22 @@ class DictionaryRemoteDataSourceImpl implements DictionaryRemoteDataSource {
   }
 
   @override
-  Future<List<SignModel>> searchSigns(String query) async {
-    try {
-      final response = await dio.get(
-        'https://api.eshara.com/signs/search',
-        queryParameters: {'q': query},
-      );
+  Future<List<SignModel>> getSignsByCategory(String category) async {
+    final allSigns = await _fetchAllSigns();
 
-      return (response.data as List)
-          .map((json) => SignModel.fromJson(json))
-          .toList();
-    } on DioException catch (e) {
-      throw Exception('فشل البحث: ${e.message}');
-    } catch (e) {
-      throw Exception('حدث خطأ غير متوقع');
-    }
+    if (category == 'الكل') return allSigns;
+
+    // الفلترة محلياً (تأكد من إن الخاصية اسمها category في SignModel)
+    return allSigns.where((sign) => sign.category == category).toList();
+  }
+
+  @override
+  Future<List<SignModel>> searchSigns(String query) async {
+    final allSigns = await _fetchAllSigns();
+
+    if (query.trim().isEmpty) return allSigns;
+
+    // الفلترة محلياً (تأكد من إن الخاصية اسمها word في SignModel)
+    return allSigns.where((sign) => sign.word.contains(query)).toList();
   }
 }

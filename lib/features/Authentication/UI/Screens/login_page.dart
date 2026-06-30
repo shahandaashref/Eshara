@@ -7,6 +7,7 @@ import 'package:eshara/features/Authentication/UI/Widget/or_and_divider.dart';
 import 'package:eshara/features/Authentication/UI/bloc/auth_bloc.dart';
 import 'package:eshara/features/Authentication/UI/bloc/auth_event.dart';
 import 'package:eshara/features/Authentication/UI/bloc/auth_state.dart';
+import 'package:eshara/features/admin/UI/Screens/admin_dashboard_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -94,6 +95,22 @@ class _LoginPageState extends State<LoginPage> {
                       if (state is AuthSuccess) {
                         // لو نجح، وديه للصفحة الرئيسية ولا تسمح له بالرجوع لصفحة اللوجين
                         Navigator.pushReplacementNamed(context, '/');
+                        // 🔴 هنا هنفرق بين الأدمن واليوزر
+                        // تأكدي من فك الكومنت بمجرد تعديل AuthSuccess ليحتوي على user
+                        
+                        /*
+                        if (state.user.role == 'Admin') {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (_) => const AdminDashboardPage()),
+                          );
+                        } else {
+                          Navigator.pushReplacementNamed(context, '/');
+                        }
+                        */
+                        
+                        // الكود المؤقت لحين ضبط الـ AuthState
+                        Navigator.pushReplacementNamed(context, '/'); 
                       } else if (state is AuthFailure) {
                         // لو فشل، طلعي SnackBar بالرسالة اللي جاية من الـ Bloc
                         ScaffoldMessenger.of(context).showSnackBar(

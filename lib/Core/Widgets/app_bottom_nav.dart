@@ -1,5 +1,7 @@
-import 'package:eshara/Core/Helper/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:curved_labeled_navigation_bar/curved_navigation_bar.dart';
+import 'package:curved_labeled_navigation_bar/curved_navigation_bar_item.dart';
+import 'package:eshara/Core/Helper/theme.dart';
 import '../constants/app_strings.dart';
 
 class AppBottomNav extends StatelessWidget {
@@ -14,128 +16,62 @@ class AppBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: EsharaTheme.navBackground,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha:  0.08),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _NavItem(
-                icon: Icons.home_rounded,
-                label: AppStrings.navHome,
-                isSelected: currentIndex == 0,
-                onTap: () => onTap(0),
-              ),
-              _NavItem(
-                icon: Icons.videocam_rounded,
-                label: AppStrings.navCamera,
-                isSelected: currentIndex == 1,
-                onTap: () => onTap(1),
-              ),
-              _NavItem(
-                icon: Icons.grid_view_rounded,
-                label: '',
-                isSelected: currentIndex == 2,
-                onTap: () => onTap(2),
-                isCenter: true,
-              ),
-              _NavItem(
-                icon: Icons.menu_book_rounded,
-                label: AppStrings.navLibrary,
-                isSelected: currentIndex == 3,
-                onTap: () => onTap(3),
-              ),
-              _NavItem(
-                icon: Icons.person_rounded,
-                label: AppStrings.navProfile,
-                isSelected: currentIndex == 4,
-                onTap: () => onTap(4),
-              ),
-            ],
-          ),
+    return CurvedNavigationBar(
+      // الإعدادات الأساسية عشان تطلع زي الصورة
+      index: currentIndex,
+      height: 75,
+      items: [
+        CurvedNavigationBarItem(
+          child: _buildIcon(Icons.home_rounded, 0),
+          label: AppStrings.navHome,
+          labelStyle: _labelStyle(0),
         ),
-      ),
+        CurvedNavigationBarItem(
+          child: _buildIcon(Icons.menu_book_rounded, 1),
+          label: AppStrings.navLibrary,
+          labelStyle: _labelStyle(1),
+        ),
+        CurvedNavigationBarItem(
+          child: _buildIcon(Icons.videocam_rounded, 2),
+          label: "ترجمة الإشارة",
+          labelStyle: _labelStyle(2),
+        ),
+        CurvedNavigationBarItem(
+          child: _buildIcon(Icons.text_fields_rounded, 3),
+          label: "ترجمة النص",
+          labelStyle: _labelStyle(3),
+        ),
+        CurvedNavigationBarItem(
+          child: _buildIcon(Icons.person_rounded, 4),
+          label: AppStrings.navProfile,
+          labelStyle: _labelStyle(4),
+        ),
+      ],
+      color: EsharaTheme.primaryBlue, // لون الشريط نفسه
+      buttonBackgroundColor: EsharaTheme.primaryBlue, // لون الدائرة اللي بتطلع فوق
+      backgroundColor: Colors.transparent, // لون خلفية الصفحة اللي ورا الشريط
+      animationCurve: Curves.easeInOut,
+      animationDuration: const Duration(milliseconds: 400),
+      onTap: onTap,
     );
   }
-}
 
-class _NavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-  final bool isCenter;
+  // Helper لجعل الأيقونة بيضاء دايماً زي التصميم
+  Widget _buildIcon(IconData icon, int index) {
+    return Icon(
+      icon,
+      size: 26,
+      color: Colors.white,
+    );
+  }
 
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-    this.isCenter = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final tt = Theme.of(context).textTheme;
-
-    if (isCenter) {
-      return GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 52,
-          height: 52,
-          decoration: const BoxDecoration(
-            gradient: EsharaTheme.primaryGradient,
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(Icons.home_rounded, color: Colors.white, size: 26),
-        ),
-      );
-    }
-
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? EsharaTheme.primaryBlue.withValues(alpha:  0.1)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 22,
-              color: isSelected ? EsharaTheme.navSelected : EsharaTheme.navUnselected,
-            ),
-            if (label.isNotEmpty) ...[
-              const SizedBox(height: 3),
-              Text(
-                label,
-                style: tt.labelSmall!.copyWith(
-                  color: isSelected ? EsharaTheme.navSelected : EsharaTheme.navUnselected,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
+  // ستايل الخط العربي (Cairo) من الثيم بتاعك
+  TextStyle _labelStyle(int index) {
+    return TextStyle(
+      fontFamily: 'Cairo',
+      fontSize: 12,
+      fontWeight: currentIndex == index ? FontWeight.bold : FontWeight.normal,
+      color: Colors.white,
     );
   }
 }

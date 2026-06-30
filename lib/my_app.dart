@@ -8,11 +8,15 @@ import 'package:eshara/features/Authentication/UI/Screens/verify_email_page.dart
 import 'package:eshara/features/Home/UI/Screens/home_page.dart';
 import 'package:eshara/features/Home/UI/Screens/main_page.dart';
 import 'package:eshara/features/Authentication/UI/bloc/auth_bloc.dart';
+import 'package:eshara/features/Profile/Ui/Screens/profile_page.dart';
 import 'package:eshara/features/Profile/Ui/bloc/profile_bloc.dart';
 import 'package:eshara/features/Dictionary/Ui/bloc/dictionary_bloc.dart';
 import 'package:eshara/features/Profile/Ui/bloc/profile_event.dart';
+import 'package:eshara/features/SignToText/UI/Screens/sign_to_text_page.dart';
 import 'package:eshara/features/SignToText/UI/bloc/sign_bloc.dart';
+import 'package:eshara/features/Text_to_sign/Ui/Screens/text_to_sign_page.dart';
 import 'package:eshara/features/Text_to_sign/Ui/bloc/text_to_sign_bloc.dart';
+import 'package:eshara/features/admin/UI/Screens/admin_dashboard_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -65,6 +69,12 @@ class MyApp extends StatelessWidget {
           '/reset_password': (context) => ResetPasswordPage(),
           '/forget_password': (context) => ForgetPasswordPage(),
           '/verify_email': (context) => VerifyEmailPage(),
+          '/signtotext': (context) => SignToTextPage(),
+          '/texttosign': (context) => TextToSignPage(),
+          '/profile': (context) => ProfilePage(),
+          '/admin_dashboard': (context) => AdminDashboardPage(),
+          
+
         },
         //home:RegisterPage(),
       ),

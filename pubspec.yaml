@@ -30,6 +30,7 @@ environment:
 dependencies:
   camera: ^0.10.5+9
   cupertino_icons: ^1.0.8
+  curved_labeled_navigation_bar: ^2.0.6
   dartz: ^0.10.1
   dio: ^5.9.2
   equatable: ^2.0.5
@@ -47,6 +48,8 @@ dependencies:
   http: ^1.1.0
   image_picker: ^1.2.2
   smooth_page_indicator: ^1.2.0
+  video_compress: ^3.1.4
+  video_player: ^2.11.1
 
 dev_dependencies:
   flutter_lints: ^5.0.0
@@ -67,6 +70,7 @@ flutter:
   assets:
     - assets/svg/
     - assets/logo/
+    - assets/avatar/
 
   fonts:
     - family: Cairo

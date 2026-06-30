@@ -25,6 +25,8 @@ import 'package:eshara/features/Authentication/Domain/usecases/register_usecase.
 import 'package:eshara/features/Authentication/Domain/usecases/resend_otp_usecase.dart';
 import 'package:eshara/features/Authentication/UI/bloc/auth_bloc.dart';
 import 'package:get_it/get_it.dart';
+import 'package:eshara/features/Text_to_sign/domain/usecases/convert_text_to_sign.dart';
+import 'package:eshara/features/Text_to_sign/Ui/bloc/text_to_sign_bloc.dart';
 import 'package:http/http.dart' as http;
 
 final sl = GetIt.instance;
@@ -128,6 +130,15 @@ void initDependencies() {
   sl.registerFactory(
     () => DictionaryBloc(getSignsUseCase: sl(), searchSignsUseCase: sl()),
   );
+
+  // ── Text To Sign ───────────────────────────────────────────────────────────
+
+  // 1. تسجيل الـ UseCase الخاص بـ Text To Sign
+  // (استخدمنا النسخة المؤقتة بدون Repository لتشغيل التطبيق وتخطي الخطأ)
+  sl.registerLazySingleton(() => ConvertTextToSignUseCase());
+
+  // 2. استخدام sl() بدلاً من null حتى يقوم GetIt بالبحث عن الـ UseCase وحقنه بنجاح
+  sl.registerFactory(() => TextToSignBloc(convertTextToSignUseCase: sl()));
 }
 
 /// top-level function بـ return type صريح

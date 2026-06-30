@@ -6,8 +6,7 @@ import 'package:eshara/features/Profile/Ui/Widgets/settings_section.dart';
 import 'package:eshara/features/Profile/Ui/Widgets/profile_info_row.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../../core/constants/app_strings.dart';
-import '../../../../../core/widgets/app_bottom_nav.dart';
+import 'package:eshara/Core/constants/app_strings.dart';
 import '../bloc/profile_bloc.dart';
 import '../bloc/profile_event.dart';
 import '../bloc/profile_state.dart';
@@ -39,7 +38,8 @@ class _ProfilePageState extends State<ProfilePage> {
         backgroundColor: EsharaTheme.background,
         body: Column(
           children: [
-            BuildAppBar(tt:TextTheme()),            Expanded(
+            BuildAppBar(tt: Theme.of(context).textTheme),
+            Expanded(
               child: BlocConsumer<ProfileBloc, ProfileState>(
                 listener: (context, state) {
                   // لما يتسجل خروج نروح لصفحة اللوجين

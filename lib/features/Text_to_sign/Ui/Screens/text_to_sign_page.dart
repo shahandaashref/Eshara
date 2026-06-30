@@ -1,9 +1,8 @@
 import 'package:eshara/Core/Helper/theme.dart';
+import 'package:eshara/Core/Helper/snackbar_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../../core/constants/app_strings.dart';
-import '../../../../../core/widgets/app_bottom_nav.dart';
-import '../../../../../core/di/injection_container.dart';
+import 'package:eshara/Core/di/injection_container.dart';
 import '../bloc/text_to_sign_bloc.dart';
 import '../bloc/text_to_sign_state_event.dart';
 import '../widgets/text_input_card.dart';
@@ -36,7 +35,6 @@ class _TextToSignView extends StatefulWidget {
 
 class _TextToSignViewState extends State<_TextToSignView> {
   final _textController = TextEditingController();
-  int _navIndex = 2;
 
   @override
   void dispose() {
@@ -61,7 +59,7 @@ class _TextToSignViewState extends State<_TextToSignView> {
 
             return Column(
               children: [
-                _buildAppBar(context, tt),
+                _buildAppBar(context, tt, state),
                 Expanded(
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 350),
@@ -74,22 +72,16 @@ class _TextToSignViewState extends State<_TextToSignView> {
             );
           },
         ),
-        bottomNavigationBar: BlocBuilder<TextToSignBloc, TextToSignState>(
-          builder: (context, state) {
-            // بنخبي الـ bottom nav في حالة الـ processing
-            if (state is TextToSignProcessingState) return const SizedBox();
-            return AppBottomNav(
-              currentIndex: _navIndex,
-              onTap: (i) => setState(() => _navIndex = i),
-            );
-          },
-        ),
       ),
     );
   }
 
   // ── AppBar ─────────────────────────────────────────────────────────────────
-  Widget _buildAppBar(BuildContext context, TextTheme tt) {
+  Widget _buildAppBar(
+    BuildContext context,
+    TextTheme tt,
+    TextToSignState state,
+  ) {
     return Container(
       color: EsharaTheme.surface,
       padding: EdgeInsets.only(
@@ -100,34 +92,41 @@ class _TextToSignViewState extends State<_TextToSignView> {
       ),
       child: Row(
         children: [
-          // زرار رجوع
-          GestureDetector(
-            onTap: () {
-              final state = context.read<TextToSignBloc>().state;
-              if (state is TextToSignResultState) {
+          // زرار رجوع فقط للرجوع من النتيجة إلى الإدخال (وليس للخروج من الصفحة)
+          if (state is TextToSignResultState)
+            GestureDetector(
+              onTap: () {
                 context.read<TextToSignBloc>().add(ResetTextToSignEvent());
-              } else {
-                Navigator.maybePop(context);
-              }
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: EsharaTheme.surfaceVariant,
-                borderRadius: BorderRadius.circular(10),
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: EsharaTheme.surfaceVariant,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 14,
+                      color: EsharaTheme.textPrimary,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'رجوع',
+                      style: tt.bodyMedium!.copyWith(
+                        color: EsharaTheme.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              child: Row(
-                children: [
-                  const Icon(Icons.arrow_forward_ios_rounded,
-                      size: 14, color: EsharaTheme.textPrimary),
-                  const SizedBox(width: 4),
-                  Text('رجوع',
-                      style: tt.bodyMedium!
-                          .copyWith(color: EsharaTheme.textPrimary)),
-                ],
-              ),
-            ),
-          ),
+            )
+          else
+            const SizedBox(width: 70), // للحفاظ على توازن التصميم في المنتصف
           const Spacer(),
           Text('ترجمة النص', style: tt.headlineLarge),
           const Spacer(),
@@ -137,8 +136,11 @@ class _TextToSignViewState extends State<_TextToSignView> {
               color: EsharaTheme.surfaceVariant,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.refresh_rounded,
-                size: 18, color: EsharaTheme.textSecondary),
+            child: const Icon(
+              Icons.refresh_rounded,
+              size: 18,
+              color: EsharaTheme.textSecondary,
+            ),
           ),
         ],
       ),
@@ -174,27 +176,38 @@ class _TextToSignViewState extends State<_TextToSignView> {
           const SizedBox(height: 24),
 
           // ── الترجمة الإشارية label ────────────────────────────────────
-          Text('الترجمة الإشارية',
-              style: tt.headlineMedium!
-                  .copyWith(color: EsharaTheme.textPrimary)),
+          Text(
+            'الترجمة الإشارية',
+            style: tt.headlineMedium!.copyWith(color: EsharaTheme.textPrimary),
+          ),
 
           const SizedBox(height: 12),
 
           // ── AI Avatar Placeholder ─────────────────────────────────────
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-              height: 280,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF0A0E27), Color(0xFF1A2050)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
-              child: const Center(
-                child: Icon(Icons.smart_toy_rounded,
-                    size: 80, color: Colors.white12),
+          Container(
+            height: 280,
+            decoration: BoxDecoration(
+              color: EsharaTheme.surfaceVariant,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: EsharaTheme.border, width: 2),
+            ),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.sign_language,
+                    size: 80,
+                    color: EsharaTheme.primaryBlue.withOpacity(0.5),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'سيظهر فيديو الترجمة هنا',
+                    style: tt.titleMedium?.copyWith(
+                      color: EsharaTheme.textSecondary,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -205,7 +218,10 @@ class _TextToSignViewState extends State<_TextToSignView> {
 
   // ── State: Processing (full screen) ───────────────────────────────────────
   Widget _buildProcessingScreen(
-      BuildContext context, TextToSignProcessingState state, TextTheme tt) {
+    BuildContext context,
+    TextToSignProcessingState state,
+    TextTheme tt,
+  ) {
     return SafeArea(
       child: Center(
         child: TextToSignProcessing(
@@ -218,7 +234,10 @@ class _TextToSignViewState extends State<_TextToSignView> {
 
   // ── State: Result ──────────────────────────────────────────────────────────
   Widget _buildResultBody(
-      BuildContext context, TextToSignResultState state, TextTheme tt) {
+    BuildContext context,
+    TextToSignResultState state,
+    TextTheme tt,
+  ) {
     return SingleChildScrollView(
       key: const ValueKey('result'),
       padding: const EdgeInsets.all(20),
@@ -242,15 +261,18 @@ class _TextToSignViewState extends State<_TextToSignView> {
                     alignment: Alignment.centerRight,
                     child: Text(
                       state.signVideo.inputText,
-                      style: tt.bodyLarge!
-                          .copyWith(color: EsharaTheme.textPrimary),
+                      style: tt.bodyLarge!.copyWith(
+                        color: EsharaTheme.textPrimary,
+                      ),
                       textDirection: TextDirection.rtl,
                     ),
                   ),
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 8),
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   child: Row(
                     children: [
                       Text(
@@ -258,8 +280,11 @@ class _TextToSignViewState extends State<_TextToSignView> {
                         style: tt.bodySmall,
                       ),
                       const Spacer(),
-                      const Icon(Icons.copy_rounded,
-                          size: 18, color: EsharaTheme.textHint),
+                      const Icon(
+                        Icons.copy_rounded,
+                        size: 18,
+                        color: EsharaTheme.textHint,
+                      ),
                     ],
                   ),
                 ),
@@ -270,9 +295,10 @@ class _TextToSignViewState extends State<_TextToSignView> {
           const SizedBox(height: 24),
 
           // ── label ─────────────────────────────────────────────────────
-          Text('الترجمة الإشارية',
-              style: tt.headlineMedium!
-                  .copyWith(color: EsharaTheme.textPrimary)),
+          Text(
+            'الترجمة الإشارية',
+            style: tt.headlineMedium!.copyWith(color: EsharaTheme.textPrimary),
+          ),
 
           const SizedBox(height: 12),
 
@@ -284,11 +310,12 @@ class _TextToSignViewState extends State<_TextToSignView> {
               // TODO: toggle video playback
             },
             onDownload: () {
-              context
-                  .read<TextToSignBloc>()
-                  .add(DownloadVideoEvent(videoUrl: state.signVideo.videoUrl));
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('جارٍ تحميل الفيديو...')),
+              context.read<TextToSignBloc>().add(
+                DownloadVideoEvent(videoUrl: state.signVideo.videoUrl),
+              );
+              SnackbarHelper.showCustomSnackBar(
+                context,
+                'جارٍ تحميل الفيديو...',
               );
             },
           ),

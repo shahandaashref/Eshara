@@ -1,7 +1,8 @@
+import 'dart:async';
 import 'package:eshara/Core/Helper/theme.dart';
 import 'package:eshara/features/Authentication/UI/Widget/header_app_bar_and_backgroun_auth.dart';
 import 'package:flutter/material.dart';
-import '../../../../core/Helper/helper.dart';
+import 'package:eshara/Core/Helper/helper.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
@@ -20,13 +21,58 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
     (_) => TextEditingController(),
   );
   String? email;
+  Timer? _timer;
+  int _secondsRemaining = 60;
+  bool _canResend = false;
+  bool _isVerifyingAction = false; // متغير للتفريق بين التحقق وإعادة الإرسال
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimer(); // بدء المؤقت تلقائياً عند فتح الشاشة
+  }
+
+  void _startTimer() {
+    setState(() {
+      _secondsRemaining = 60;
+      _canResend = false;
+    });
+    _timer?.cancel(); // إلغاء أي مؤقت سابق إن وجد
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_secondsRemaining > 0) {
+        setState(() => _secondsRemaining--);
+      } else {
+        setState(() => _canResend = true);
+        timer.cancel();
+      }
+    });
+  }
 
   @override
   void dispose() {
+    _timer?.cancel(); // إيقاف المؤقت عند الخروج من الشاشة لمنع استهلاك الذاكرة
     for (var controller in _otpControllers) {
       controller.dispose();
     }
     super.dispose();
+  }
+
+  // دالة منفصلة لعملية التحقق لكي نتمكن من استدعائها تلقائياً أو يدوياً
+  void _verifyCode(BuildContext context) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    String otpCode = _otpControllers.map((c) => c.text).join();
+    if (otpCode.length == 6 && email != null) {
+      _isVerifyingAction = true; // المستخدم يحاول التحقق
+      context.read<AuthBloc>().add(VerifyOtpEvent(email!, otpCode));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى إدخال الرمز المكون من 6 أرقام')),
+      );
+    }
   }
 
   @override
@@ -93,6 +139,11 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
                         ScaffoldMessenger.of(
                           context,
                         ).showSnackBar(SnackBar(content: Text(state.message)));
+
+                        // إذا كان الإجراء "تحقق" ونجح، ننقله للصفحة التالية
+                        if (_isVerifyingAction) {
+                          Navigator.pushReplacementNamed(context, '/login');
+                        }
                       } else if (state is AuthFailure) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text(state.errorMessage)),
@@ -104,25 +155,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
                       return ElevatedButton(
                         onPressed: isLoading
                             ? null
-                            : () {
-                                FocusManager.instance.primaryFocus?.unfocus();
-                                String otpCode = _otpControllers
-                                    .map((c) => c.text)
-                                    .join();
-                                if (otpCode.length == 6 && email != null) {
-                                  context.read<AuthBloc>().add(
-                                    VerifyOtpEvent(email!, otpCode),
-                                  );
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'يرجى إدخال الرمز المكون من 6 أرقام',
-                                      ),
-                                    ),
-                                  );
-                                }
-                              },
+                            : () => _verifyCode(context),
                         child: isLoading
                             ? const CircularProgressIndicator(
                                 color: Colors.white,
@@ -139,25 +172,52 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    TextButton(
-                      onPressed: () {
-                        if (email != null) {
-                          context.read<AuthBloc>().add(ResendOtpEvent(email!));
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('البريد الإلكتروني غير متوفر'),
-                            ),
-                          );
-                        }
+                    BlocBuilder<AuthBloc, AuthState>(
+                      builder: (context, state) {
+                        final isLoading = state is AuthLoading;
+                        return TextButton(
+                          onPressed: (_canResend && !isLoading)
+                              ? () {
+                                  if (email != null) {
+                                    _isVerifyingAction =
+                                        false; // المستخدم يطلب إعادة الإرسال
+                                    context.read<AuthBloc>().add(
+                                      ResendOtpEvent(email!),
+                                    );
+                                    _startTimer(); // بدء المؤقت من جديد بعد الضغط
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'البريد الإلكتروني غير متوفر',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                }
+                              : null, // تعطيل الزر إذا كان المؤقت يعمل
+                          child: isLoading
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: EsharaTheme.primaryBlue,
+                                  ),
+                                )
+                              : Text(
+                                  _canResend
+                                      ? "أرسل الكود مرة أخرى"
+                                      : "أعد الإرسال بعد $_secondsRemaining ث",
+                                  style: TextStyle(
+                                    color: _canResend
+                                        ? EsharaTheme.primaryBlue
+                                        : EsharaTheme.textSecondary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                        );
                       },
-                      child: const Text(
-                        "أرسل الكود مرة أخرى",
-                        style: TextStyle(
-                          color: EsharaTheme.primaryBlue,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
                     ),
                     const Text("لم يصلك الكود؟"),
                   ],
@@ -183,12 +243,31 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
       child: TextFormField(
         controller: _otpControllers[index],
         onChanged: (value) {
-          if (value.length == 1) FocusScope.of(context).nextFocus();
+          if (value.isNotEmpty) {
+            // الانتقال للمربع التالي، أو إخفاء الكيبورد إذا كان المربع الأخير
+            if (index < 5) {
+              FocusScope.of(context).nextFocus();
+            } else {
+              FocusScope.of(context).unfocus();
+              // التحقق التلقائي بمجرد كتابة الرقم الأخير
+              String otpCode = _otpControllers.map((c) => c.text).join();
+              if (otpCode.length == 6) {
+                _verifyCode(context);
+              }
+            }
+          } else {
+            // الرجوع للمربع السابق عند مسح الرقم
+            if (index > 0) {
+              FocusScope.of(context).previousFocus();
+            }
+          }
         },
         textAlign: TextAlign.center,
         keyboardType: TextInputType.number,
+        maxLength: 1, // السماح برقم واحد فقط في كل مربع
         style: Theme.of(context).textTheme.headlineLarge,
         decoration: const InputDecoration(
+          counterText: '', // إخفاء عداد الحروف (مثل 1/1) من تحت المربع
           border: InputBorder.none,
           enabledBorder: InputBorder.none,
           focusedBorder: InputBorder.none,
