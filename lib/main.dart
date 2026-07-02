@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   //await init();
-  initDependencies();
+  await initDependencies();
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -15,9 +15,3 @@ Future<void> main() async {
   );
   runApp(const MyApp());
 }
-
-
-
-
-
-

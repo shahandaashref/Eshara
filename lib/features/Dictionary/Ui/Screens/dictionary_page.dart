@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:eshara/Core/Helper/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/dictionary_bloc.dart';
-import '../widgets/sign_video_card.dart'; 
+import 'word_detail_page.dart';
+import '../widgets/sign_video_card.dart';
 
 class DictionaryPage extends StatefulWidget {
   const DictionaryPage({super.key});
@@ -13,14 +15,32 @@ class DictionaryPage extends StatefulWidget {
 
 class _DictionaryPageState extends State<DictionaryPage> {
   // قائمة التصنيفات زي ما في الصورة
-  final List<String> categories = ["الكل", "تحيات", "طيبة", "عائلة", "تعليم"];
+  final List<String> categories = const [
+    "الكل",
+    "تحيات",
+    "طيبة",
+    "عائلة",
+    "تعليم",
+  ];
   String selectedCategory = "الكل";
+
+  // Controller للتحكم في حقل البحث
+  final _searchController = TextEditingController();
+  // Timer لتأخير البحث أثناء الكتابة (Debouncing)
+  Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
     // أول ما الصفحة تفتح بننادي أول تصنيف
     context.read<DictionaryBloc>().add(LoadSignsEvent(selectedCategory));
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _debounce?.cancel();
+    super.dispose();
   }
 
   @override
@@ -31,15 +51,23 @@ class _DictionaryPageState extends State<DictionaryPage> {
         backgroundColor: EsharaTheme.background,
         appBar: AppBar(
           leading: IconButton(
-            icon: const Icon(Icons.info_outline, color: EsharaTheme.primaryBlue),
-            onPressed: () {},
+            icon: const Icon(
+              Icons.person_outline,
+              color: EsharaTheme.primaryBlue,
+            ),
+            tooltip: 'الملف الشخصي', // نص يظهر عند الضغط المطول
+            onPressed: () {
+              Navigator.pushNamed(context, '/profile');
+            },
           ),
-          title: Center(child: Image.asset('assets/logo/logo.png', height: 30)), 
-          
+          title: Center(child: Image.asset('assets/logo/logo.png', height: 30)),
+
           actions: [
             IconButton(
               icon: const Icon(Icons.refresh, color: EsharaTheme.primaryBlue),
-              onPressed: () => context.read<DictionaryBloc>().add(LoadSignsEvent(selectedCategory)),
+              onPressed: () => context.read<DictionaryBloc>().add(
+                LoadSignsEvent(selectedCategory),
+              ),
             ),
           ],
         ),
@@ -64,12 +92,16 @@ class _DictionaryPageState extends State<DictionaryPage> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           ElevatedButton.icon(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.pushNamed(context, '/add_word');
+            },
             icon: const Icon(Icons.add, size: 18),
             label: const Text("كلمة جديدة"),
             style: ElevatedButton.styleFrom(
               backgroundColor: EsharaTheme.primaryBlue,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
             ),
           ),
           Text("قاموس الإشارات", style: EsharaTheme.textTheme.headlineMedium),
@@ -82,12 +114,29 @@ class _DictionaryPageState extends State<DictionaryPage> {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: TextField(
+        controller: _searchController,
         textAlign: TextAlign.right,
         decoration: InputDecoration(
           hintText: "...البحث عن كلمة",
           prefixIcon: const Icon(Icons.search, color: EsharaTheme.textHint),
           fillColor: EsharaTheme.surface,
         ),
+        onChanged: (query) {
+          // إلغاء الـ Timer القديم لو المستخدم لسه بيكتب
+          if (_debounce?.isActive ?? false) _debounce!.cancel();
+          // إنشاء Timer جديد
+          _debounce = Timer(const Duration(milliseconds: 500), () {
+            if (query.trim().isNotEmpty) {
+              // إرسال حدث البحث للـ Bloc
+              context.read<DictionaryBloc>().add(SearchSignsEvent(query));
+            } else {
+              // لو حقل البحث فاضي، بنرجع نحمل التصنيف المحدد
+              context.read<DictionaryBloc>().add(
+                LoadSignsEvent(selectedCategory),
+              );
+            }
+          });
+        },
       ),
     );
   }
@@ -110,11 +159,20 @@ class _DictionaryPageState extends State<DictionaryPage> {
                 context.read<DictionaryBloc>().add(LoadSignsEvent(category));
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
-                  color: isSelected ? EsharaTheme.primaryBlue : EsharaTheme.surface,
+                  color: isSelected
+                      ? EsharaTheme.primaryBlue
+                      : EsharaTheme.surface,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: isSelected ? EsharaTheme.primaryBlue : EsharaTheme.border),
+                  border: Border.all(
+                    color: isSelected
+                        ? EsharaTheme.primaryBlue
+                        : EsharaTheme.border,
+                  ),
                 ),
                 child: Text(
                   category,
@@ -135,7 +193,9 @@ class _DictionaryPageState extends State<DictionaryPage> {
     return BlocBuilder<DictionaryBloc, DictionaryState>(
       builder: (context, state) {
         if (state is DictionaryLoading) {
-          return const Center(child: CircularProgressIndicator(color: EsharaTheme.primaryBlue));
+          return const Center(
+            child: CircularProgressIndicator(color: EsharaTheme.primaryBlue),
+          );
         } else if (state is DictionaryLoaded) {
           if (state.signs.isEmpty) {
             return const Center(child: Text("لا توجد إشارات في هذا التصنيف"));
@@ -150,7 +210,18 @@ class _DictionaryPageState extends State<DictionaryPage> {
             ),
             itemCount: state.signs.length,
             itemBuilder: (context, index) {
-              return SignVideoCard(sign: state.signs[index]);
+              final sign = state.signs[index];
+              return SignVideoCard(
+                sign: sign,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => WordDetailPage(sign: sign),
+                    ),
+                  );
+                },
+              );
             },
           );
         } else if (state is DictionaryError) {

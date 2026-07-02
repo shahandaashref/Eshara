@@ -1,5 +1,4 @@
 import 'package:eshara/Core/Helper/theme.dart';
-import 'package:eshara/Core/constants/app_strings.dart';
 import 'package:flutter/material.dart';
 
 class BuildAppBar extends StatelessWidget {
@@ -22,11 +21,15 @@ class BuildAppBar extends StatelessWidget {
         // مجموعة الأيقونات الموجودة على يسار الشاشة
         Row(
           children: [
-            _AppBarIcon(icon: Icons.person_outline_rounded, onTap: () {}),
+            _AppBarIcon(icon: Icons.person_outline_rounded, onTap: () {
+              Navigator.pushNamed(context, '/profile');
+            }),
             const SizedBox(width: 8),
             _AppBarIcon(
               icon: Icons.notifications_outlined,
-              onTap: () {},
+              onTap: () {
+                Navigator.pushNamed(context, '/notifications');
+              },
               hasBadge: true, // إظهار نقطة حمراء كدليل على وجود إشعار جديد
             ),
           ],

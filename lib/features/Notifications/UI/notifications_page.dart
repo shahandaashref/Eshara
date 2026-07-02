@@ -113,11 +113,11 @@ class _NotifCard extends StatelessWidget {
         color: EsharaTheme.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: item.isNew ? EsharaTheme.primaryBlue.withOpacity(0.3) : EsharaTheme.border,
+          color: item.isNew ? EsharaTheme.primaryBlue.withValues(alpha: 0.3) : EsharaTheme.border,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -148,7 +148,7 @@ class _NotifCard extends StatelessWidget {
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: item.isNew
-                  ? EsharaTheme.primaryBlue.withOpacity(0.1)
+                  ? EsharaTheme.primaryBlue.withValues(alpha: 0.1)
                   : EsharaTheme.surfaceVariant,
               borderRadius: BorderRadius.circular(10),
             ),

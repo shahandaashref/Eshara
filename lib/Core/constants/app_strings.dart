@@ -6,7 +6,7 @@ class AppStrings {
 
   // Home
   static const String homeTitle = 'الرئيسية';
-  static const String welcomeMessage = 'مرحباً أميرة';
+  static const String welcomeMessage = 'مرحباً';
   static const String welcomeSubtitle = 'ماذا تريد أن تفعل اليوم؟';
 
   static const String signToText = 'الإشارة إلى نص';

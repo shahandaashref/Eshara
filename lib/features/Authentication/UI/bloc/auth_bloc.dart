@@ -1,4 +1,4 @@
-import 'package:eshara/features/Authentication/UI/Screens/verify_otp_usecase.dart';
+import 'package:eshara/features/Authentication/Domain/usecases/verify_otp_usecase.dart';
 import 'package:eshara/features/Authentication/UI/bloc/auth_event.dart';
 import 'package:eshara/features/Authentication/UI/bloc/auth_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -23,8 +23,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(AuthLoading());
       try {
         final user = await loginUseCase(event.email, event.password);
-        // لو نجح، بنبعت حالة النجاح ونمرر بيانات اليوزر معاها
-        emit(AuthSuccess("تم تسجيل الدخول بنجاح ✅", user: user));
+        // الآن الـ `user` يحتوي على الدور (role)
+        emit(AuthSuccess(user: user, message: "تم تسجيل الدخول بنجاح ✅"));
       } catch (e) {
         // لو حصل مشكلة (مثلاً باسورد غلط)
         emit(AuthFailure(e.toString().replaceAll('Exception: ', '')));
@@ -36,7 +36,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(AuthLoading());
       try {
         await registerUseCase(event.name, event.email, event.password);
-        emit(AuthSuccess("تم إنشاء الحساب بنجاح ✅"));
+        emit(AuthSuccess(message: "تم إنشاء الحساب بنجاح ✅"));
       } catch (e) {
         emit(AuthFailure(e.toString().replaceAll('Exception: ', '')));
       }
@@ -47,7 +47,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(AuthLoading());
       try {
         await verifyOtpUseCase(event.email, event.code);
-        emit(AuthSuccess("تم التحقق من البريد بنجاح ✅"));
+        emit(AuthSuccess(message: "تم التحقق من البريد بنجاح ✅"));
       } catch (e) {
         emit(AuthFailure(e.toString().replaceAll('Exception: ', '')));
       }
@@ -58,7 +58,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(AuthLoading());
       try {
         await resendOtpUseCase(event.email);
-        emit(AuthActionSuccess("تم إعادة إرسال الكود بنجاح 📩"));
+        emit(AuthSuccess(message: "تم إعادة إرسال الكود بنجاح 📩"));
       } catch (e) {
         emit(AuthFailure(e.toString().replaceAll('Exception: ', '')));
       }

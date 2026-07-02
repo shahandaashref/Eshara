@@ -28,7 +28,9 @@ class DictionaryBloc extends Bloc<DictionaryEvent, DictionaryState> {
       final signs = await getSignsUseCase(event.category);
       emit(DictionaryLoaded(signs, event.category));
     } catch (e) {
-      emit(DictionaryError(e.toString().replaceAll('Exception: ', '')));
+      emit(
+        DictionaryError('عفوًا، حدث خطأ أثناء تحميل البيانات. حاول مرة أخرى.'),
+      );
     }
   }
 
@@ -42,7 +44,7 @@ class DictionaryBloc extends Bloc<DictionaryEvent, DictionaryState> {
       // هنا نرسل category فارغ لأن البحث لا يعتمد على category معين
       emit(DictionaryLoaded(signs, ''));
     } catch (e) {
-      emit(DictionaryError(e.toString().replaceAll('Exception: ', '')));
+      emit(DictionaryError('عفوًا، حدث خطأ أثناء البحث. حاول مرة أخرى.'));
     }
   }
 }

@@ -1,70 +1,71 @@
-import 'package:eshara/features/admin/Domain/entitys/admin_entities.dart';
 import 'package:eshara/features/admin/Domain/repositorys/admin_repository.dart';
 
-
-class GetStatsUseCase {
-  final AdminRepository repo;
-  GetStatsUseCase(this.repo);
-  Future<AdminStats> call() => repo.getStats();
-}
-
 class GetWordsUseCase {
-  final AdminRepository repo;
-  GetWordsUseCase(this.repo);
-  Future<List<AdminWord>> call({String? categoryId}) =>
-      repo.getWords(categoryId: categoryId);
+  final AdminRepository repository;
+  GetWordsUseCase(this.repository);
+  Future<dynamic> call({String? categoryId}) async =>
+      repository.getWords(categoryId: categoryId);
 }
 
 class AddWordUseCase {
-  final AdminRepository repo;
-  AddWordUseCase(this.repo);
-  Future<AdminWord> call(AdminWord word) => repo.addWord(word);
+  final AdminRepository repository;
+  AddWordUseCase(this.repository);
+  Future<void> call(dynamic word) async => repository.addWord(word);
 }
 
 class UpdateWordUseCase {
-  final AdminRepository repo;
-  UpdateWordUseCase(this.repo);
-  Future<AdminWord> call(AdminWord word) => repo.updateWord(word);
+  final AdminRepository repository;
+  UpdateWordUseCase(this.repository);
+  Future<void> call(dynamic word) async => repository.updateWord(word);
 }
 
 class DeleteWordUseCase {
-  final AdminRepository repo;
-  DeleteWordUseCase(this.repo);
-  Future<void> call(String wordId) => repo.deleteWord(wordId);
+  final AdminRepository repository;
+  DeleteWordUseCase(this.repository);
+  Future<void> call(String wordId) async => repository.deleteWord(wordId);
 }
 
 class GetCategoriesUseCase {
-  final AdminRepository repo;
-  GetCategoriesUseCase(this.repo);
-  Future<List<AdminCategory>> call() => repo.getCategories();
+  final AdminRepository repository;
+  GetCategoriesUseCase(this.repository);
+  Future<dynamic> call() async => repository.getCategories();
 }
 
 class AddCategoryUseCase {
-  final AdminRepository repo;
-  AddCategoryUseCase(this.repo);
-  Future<AdminCategory> call(String name) => repo.addCategory(name);
+  final AdminRepository repository;
+  AddCategoryUseCase(this.repository);
+  Future<void> call(dynamic category) async => repository.addCategory(category);
 }
 
 class DeleteCategoryUseCase {
-  final AdminRepository repo;
-  DeleteCategoryUseCase(this.repo);
-  Future<void> call(String categoryId) => repo.deleteCategory(categoryId);
+  final AdminRepository repository;
+  DeleteCategoryUseCase(this.repository);
+  Future<void> call(String categoryId) async =>
+      repository.deleteCategory(categoryId);
 }
 
 class GetWordRequestsUseCase {
-  final AdminRepository repo;
-  GetWordRequestsUseCase(this.repo);
-  Future<List<WordRequest>> call() => repo.getWordRequests();
+  final AdminRepository repository;
+  GetWordRequestsUseCase(this.repository);
+  Future<dynamic> call() async => repository.getWordRequests();
 }
 
 class AcceptRequestUseCase {
-  final AdminRepository repo;
-  AcceptRequestUseCase(this.repo);
-  Future<void> call(String requestId) => repo.acceptRequest(requestId);
+  final AdminRepository repository;
+  AcceptRequestUseCase(this.repository);
+  Future<void> call(String requestId) async =>
+      repository.acceptRequest(requestId);
 }
 
 class RejectRequestUseCase {
-  final AdminRepository repo;
-  RejectRequestUseCase(this.repo);
-  Future<void> call(String requestId) => repo.rejectRequest(requestId);
+  final AdminRepository repository;
+  RejectRequestUseCase(this.repository);
+  Future<void> call(String requestId) async =>
+      repository.rejectRequest(requestId);
+}
+
+class GetUsersUseCase {
+  final AdminRepository repository;
+  GetUsersUseCase(this.repository);
+  Future<dynamic> call() async => repository.getUsers();
 }

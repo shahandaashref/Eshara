@@ -7,15 +7,34 @@ class AdminRepositoryImpl implements AdminRepository {
   final AdminRemoteDataSource remoteDataSource;
   AdminRepositoryImpl({required this.remoteDataSource});
 
-  @override Future<AdminStats> getStats() => remoteDataSource.getStats();
-  @override Future<List<AdminWord>> getWords({String? categoryId}) => remoteDataSource.getWords(categoryId: categoryId);
-  @override Future<AdminWord> addWord(AdminWord word) => remoteDataSource.addWord(word);
-  @override Future<AdminWord> updateWord(AdminWord word) => remoteDataSource.updateWord(word);
-  @override Future<void> deleteWord(String wordId) => remoteDataSource.deleteWord(wordId);
-  @override Future<List<AdminCategory>> getCategories() => remoteDataSource.getCategories();
-  @override Future<AdminCategory> addCategory(String name) => remoteDataSource.addCategory(name);
-  @override Future<void> deleteCategory(String categoryId) => remoteDataSource.deleteCategory(categoryId);
-  @override Future<List<WordRequest>> getWordRequests() => remoteDataSource.getWordRequests();
-  @override Future<void> acceptRequest(String requestId) => remoteDataSource.acceptRequest(requestId);
-  @override Future<void> rejectRequest(String requestId) => remoteDataSource.rejectRequest(requestId);
+  @override
+  Future<List<AdminWord>> getWords({String? categoryId}) =>
+      remoteDataSource.getWords(categoryId: categoryId);
+  @override
+  Future<AdminWord> addWord(AdminWord word) => remoteDataSource.addWord(word);
+  @override
+  Future<void> updateWord(AdminWord word) => remoteDataSource.updateWord(word);
+  @override
+  Future<void> deleteWord(String wordId) => remoteDataSource.deleteWord(wordId);
+  @override
+  Future<List<AdminCategory>> getCategories() =>
+      remoteDataSource.getCategories();
+  @override
+  Future<AdminCategory> addCategory(String name) =>
+      remoteDataSource.addCategory(name);
+  @override
+  Future<void> deleteCategory(String categoryId) =>
+      remoteDataSource.deleteCategory(categoryId);
+  @override
+  Future<List<WordRequest>> getWordRequests() =>
+      remoteDataSource.getWordRequests();
+  @override
+  Future<void> acceptRequest(String requestId) =>
+      remoteDataSource.acceptRequest(requestId);
+  @override
+  Future<void> rejectRequest(String requestId) =>
+      remoteDataSource.rejectRequest(requestId);
+  // تم إضافة الدالة المفقودة
+  @override
+  Future<dynamic> getUsers() => remoteDataSource.getUsers();
 }

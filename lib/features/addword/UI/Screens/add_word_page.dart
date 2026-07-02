@@ -1,4 +1,7 @@
 import 'package:eshara/Core/Helper/theme.dart';
+import 'package:eshara/Core/di/injection_container.dart';
+import 'package:eshara/features/addword/UI/Screens/add_word_success_page.dart';
+import 'package:eshara/features/addword/UI/Widgets/video_upload_box.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/add_word_bloc.dart';
@@ -13,8 +16,12 @@ class AddWordPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!sl.isRegistered<AddWordBloc>()) {
+      initDependencies();
+    }
+
     return BlocProvider(
-      create: (_) => AddWordBloc(),
+      create: (_) => sl<AddWordBloc>(),
       child: const _AddWordView(),
     );
   }
@@ -50,10 +57,10 @@ class _AddWordViewState extends State<_AddWordView> {
         body: BlocConsumer<AddWordBloc, AddWordState>(
           listener: (context, state) {
             if (state is AddWordSuccessState) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('تمت إضافة الكلمة بنجاح ✅')),
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const AddWordSuccessPage()),
               );
-              Navigator.pop(context);
             }
           },
           builder: (context, state) {
@@ -74,14 +81,35 @@ class _AddWordViewState extends State<_AddWordView> {
                           const SizedBox(height: 8),
 
                           // عنوان الصفحة
-                          Text('إضافة كلمة جديدة',
-                              style: tt.displaySmall!.copyWith(
-                                  color: EsharaTheme.textPrimary)),
+                          Text(
+                            'طلب إضافة كلمة جديدة',
+                            style: tt.displaySmall!.copyWith(
+                              color: EsharaTheme.textPrimary,
+                            ),
+                          ),
                           const SizedBox(height: 4),
                           Text(
-                            'أضف كلمات لغة الإشارة الخاصة بك إلى القاموس الشخصي الخاص بك',
+                            'أدخل بيانات الكلمة الجديدة وسيتم إرسالها للمراجعة والموافقة من الأدمن.',
                             style: tt.bodyMedium,
                             textAlign: TextAlign.right,
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: EsharaTheme.primaryBlue.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: EsharaTheme.primaryBlue.withOpacity(0.2),
+                              ),
+                            ),
+                            child: Text(
+                              'سيتم إرسال الكلمة كطلب إلى الأدمن، وبعد الموافقة ستظهر في القاموس.',
+                              style: tt.bodySmall!.copyWith(
+                                color: EsharaTheme.primaryBlue,
+                              ),
+                              textAlign: TextAlign.right,
+                            ),
                           ),
 
                           const SizedBox(height: 24),
@@ -92,13 +120,15 @@ class _AddWordViewState extends State<_AddWordView> {
                           TextFormField(
                             controller: _wordController,
                             textAlign: TextAlign.right,
-                            validator: (v) => v == null || v.isEmpty
-                                ? 'الكلمة مطلوبة'
-                                : null,
+                            validator: (v) =>
+                                v == null || v.isEmpty ? 'الكلمة مطلوبة' : null,
                             decoration: const InputDecoration(
                               hintText: 'اكتب الكلمة هنا',
-                              prefixIcon: Icon(Icons.text_fields_rounded,
-                                  color: EsharaTheme.textHint, size: 20),
+                              prefixIcon: Icon(
+                                Icons.text_fields_rounded,
+                                color: EsharaTheme.textHint,
+                                size: 20,
+                              ),
                             ),
                           ),
 
@@ -107,34 +137,35 @@ class _AddWordViewState extends State<_AddWordView> {
                           // ── رفع الفيديو ───────────────────────────────
                           _buildLabel(tt, 'فيديو الإشارة'),
                           const SizedBox(height: 6),
-                          _VideoUploadBox(
+                          VideoUploadBox(
                             videoPicked: videoPicked,
-                            videoName: videoPicked
-                                ? (state as VideoPickedState).videoName
-                                : null,
-                            onPick: () => context
-                                .read<AddWordBloc>()
-                                .add(PickVideoEvent()),
-                            onCancel: () => context
-                                .read<AddWordBloc>()
-                                .add(CancelUploadEvent()),
+                            videoName: videoPicked ? (state).videoName : null,
+                            onPick: () => context.read<AddWordBloc>().add(
+                              PickVideoEvent(),
+                            ),
+                            onCancel: () => context.read<AddWordBloc>().add(
+                              CancelUploadEvent(),
+                            ),
                           ),
 
                           const SizedBox(height: 16),
 
                           // ── الوصف ─────────────────────────────────────
-                          _buildLabel(tt, 'وصف الكلمة (اختياري)'),
+                          _buildLabel(tt, 'شرح الحركة'),
                           const SizedBox(height: 6),
                           TextFormField(
                             controller: _descController,
                             textAlign: TextAlign.right,
                             maxLines: 3,
                             decoration: const InputDecoration(
-                              hintText: 'اكتب وصفاً للكلمة',
+                              hintText: 'اكتب التفاصيل',
                               prefixIcon: Padding(
                                 padding: EdgeInsets.only(bottom: 48),
-                                child: Icon(Icons.description_outlined,
-                                    color: EsharaTheme.textHint, size: 20),
+                                child: Icon(
+                                  Icons.description_outlined,
+                                  color: EsharaTheme.textHint,
+                                  size: 20,
+                                ),
                               ),
                             ),
                           ),
@@ -151,9 +182,11 @@ class _AddWordViewState extends State<_AddWordView> {
                                       width: 20,
                                       height: 20,
                                       child: CircularProgressIndicator(
-                                          color: Colors.white, strokeWidth: 2),
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
                                     )
-                                  : const Text('إضافة'),
+                                  : const Text('إرسال طلب'),
                             ),
                           ),
                         ],
@@ -188,8 +221,11 @@ class _AddWordViewState extends State<_AddWordView> {
                 color: EsharaTheme.surfaceVariant,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.arrow_forward_ios_rounded,
-                  size: 18, color: EsharaTheme.textPrimary),
+              child: const Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 18,
+                color: EsharaTheme.textPrimary,
+              ),
             ),
           ),
           const Spacer(),
@@ -202,107 +238,24 @@ class _AddWordViewState extends State<_AddWordView> {
   }
 
   Widget _buildLabel(TextTheme tt, String text) {
-    return Text(text,
-        style: tt.titleMedium!.copyWith(color: EsharaTheme.textPrimary));
+    return Text(
+      text,
+      style: tt.titleMedium!.copyWith(color: EsharaTheme.textPrimary),
+    );
   }
 
   void _onSubmit() {
     if (_formKey.currentState?.validate() ?? false) {
-      context.read<AddWordBloc>().add(SubmitWordEvent(
-            word: _wordController.text.trim(),
-            description: _descController.text.trim(),
-          ));
-    }
-  }
-}
+      final state = context.read<AddWordBloc>().state;
+      final videoPath = state is VideoPickedState ? state.videoPath : null;
 
-// ── Video Upload Box ───────────────────────────────────────────────────────
-/// [Widget] — _VideoUploadBox
-/// بيعرض منطقة رفع الفيديو:
-/// - لو مفيش فيديو: بيعرض أيقونة الرفع
-/// - لو اتختار فيديو: بيعرض اسمه مع زرار إلغاء
-class _VideoUploadBox extends StatelessWidget {
-  final bool videoPicked;
-  final String? videoName;
-  final VoidCallback onPick;
-  final VoidCallback onCancel;
-
-  const _VideoUploadBox({
-    required this.videoPicked,
-    required this.onPick,
-    required this.onCancel,
-    this.videoName,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final tt = Theme.of(context).textTheme;
-
-    return GestureDetector(
-      onTap: videoPicked ? null : onPick,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: EsharaTheme.surfaceVariant,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: videoPicked
-                ? EsharaTheme.primaryBlue
-                : EsharaTheme.border,
-            style: BorderStyle.solid,
-          ),
+      context.read<AddWordBloc>().add(
+        SubmitWordEvent(
+          word: _wordController.text.trim(),
+          description: _descController.text.trim(),
+          videoPath: videoPath,
         ),
-        child: videoPicked
-            ? Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  // زرار إلغاء العملية
-                  GestureDetector(
-                    onTap: onCancel,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: EsharaTheme.error.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text('إلغاء العملية',
-                          style: tt.labelMedium!.copyWith(
-                              color: EsharaTheme.error)),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      videoName ?? '',
-                      style: tt.bodyMedium!
-                          .copyWith(color: EsharaTheme.textPrimary),
-                      textAlign: TextAlign.right,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  const Icon(Icons.video_file_rounded,
-                      color: EsharaTheme.primaryBlue, size: 28),
-                ],
-              )
-            : Column(
-                children: [
-                  const Icon(Icons.cloud_upload_outlined,
-                      size: 40, color: EsharaTheme.textHint),
-                  const SizedBox(height: 8),
-                  Text(
-                    'ارفع فيديو من الاستوديو',
-                    style:
-                        tt.bodyMedium!.copyWith(color: EsharaTheme.textPrimary),
-                  ),
-                  const SizedBox(height: 4),
-                  Text('يدعم ملفات MP4، MOV',
-                      style: tt.bodySmall),
-                ],
-              ),
-      ),
-    );
+      );
+    }
   }
 }

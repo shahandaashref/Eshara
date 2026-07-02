@@ -1,20 +1,34 @@
 import 'dart:convert';
+import 'package:eshara/current_user_store.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
+class AuthLoginResponse {
+  final String token;
+  final String? role;
+
+  AuthLoginResponse({required this.token, this.role});
+}
+
 abstract class AuthRemoteDataSource {
   Future<void> register(String name, String email, String password);
-  Future<String> login(String email, String password);
+  Future<AuthLoginResponse> login(String email, String password);
   Future<void> verifyOtp(String email, String code);
   Future<void> resendOtp(String email);
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   final http.Client client;
+  final SharedPreferences sharedPreferences;
   // الرابط الأساسي للسيرفر
   static const String baseUrl = 'https://eshara.runasp.net';
 
-  AuthRemoteDataSourceImpl({required this.client});
+  AuthRemoteDataSourceImpl({
+    required this.client,
+    required this.sharedPreferences,
+  });
 
   Map<String, dynamic> _decodeJsonBody(String responseBody) {
     final decoded = json.decode(responseBody);
@@ -29,11 +43,15 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       final data = json.decode(responseBody);
       if (data is Map<String, dynamic>) {
         // البحث في المفاتيح الشائعة التي ترسلها الخوادم (خاصة .NET APIs)
-        if (data.containsKey('message')) return data['message'].toString();
-        if (data.containsKey('description'))
+        if (data.containsKey('message')) {
+          return data['message'].toString();
+        }
+        if (data.containsKey('description')) {
           return data['description'].toString();
-        if (data.containsKey('title') && !data.containsKey('errors'))
+        }
+        if (data.containsKey('title') && !data.containsKey('errors')) {
           return data['title'].toString();
+        }
 
         // إذا كان هناك قائمة أخطاء تفصيلية (Validation Errors)
         if (data.containsKey('errors')) {
@@ -75,13 +93,15 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       if (response.statusCode != 200 && response.statusCode != 201) {
         throw Exception(_getErrorMessage(response.body));
       }
+
+      CurrentUserStore().setUser(name: name, email: email);
     } catch (e) {
       throw Exception('حدث خطأ أثناء التسجيل: $e');
     }
   }
 
   @override
-  Future<String> login(String email, String password) async {
+  Future<AuthLoginResponse> login(String email, String password) async {
     try {
       final url = Uri.parse('$baseUrl/api/Auth/login');
 
@@ -102,7 +122,45 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
             (data['data'] is Map ? (data['data'] as Map)['token'] : null);
 
         if (token is String && token.isNotEmpty) {
-          return token;
+          String? role;
+
+          String? getString(dynamic value) {
+            if (value is String && value.trim().isNotEmpty) return value.trim();
+            return null;
+          }
+
+          if (data.containsKey('role')) {
+            role = getString(data['role']);
+          }
+
+          if (role == null && data.containsKey('roles')) {
+            final roles = data['roles'];
+            if (roles is String) {
+              role = getString(roles);
+            } else if (roles is List && roles.isNotEmpty) {
+              role = getString(roles.first);
+            }
+          }
+
+          if (role == null && data.containsKey('data') && data['data'] is Map) {
+            final nested = Map<String, dynamic>.from(data['data'] as Map);
+            role = getString(nested['role']);
+            if (role == null && nested.containsKey('roles')) {
+              final nestedRoles = nested['roles'];
+              if (nestedRoles is String) {
+                role = getString(nestedRoles);
+              } else if (nestedRoles is List && nestedRoles.isNotEmpty) {
+                role = getString(nestedRoles.first);
+              }
+            }
+          }
+
+          // الخطوة الأهم: حفظ التوكن في الذاكرة الدائمة
+          await sharedPreferences.setString('auth_token', token);
+
+          // نقوم الآن بتمرير الدور الذي حصلنا عليه من الخادم
+          CurrentUserStore().setUser(name: '', email: email, role: role);
+          return AuthLoginResponse(token: token, role: role);
         }
 
         throw Exception('لم يتم استلام رمز الدخول من الخادم');

@@ -25,6 +25,7 @@ class AdminWordDetailPage extends StatefulWidget {
 
 class _AdminWordDetailPageState extends State<AdminWordDetailPage> {
   late TextEditingController _wordCtrl;
+  late TextEditingController _glossCtrl;
   late TextEditingController _descCtrl;
   bool _isEditing = false;
 
@@ -33,12 +34,14 @@ class _AdminWordDetailPageState extends State<AdminWordDetailPage> {
     super.initState();
     _isEditing = widget.isEdit;
     _wordCtrl = TextEditingController(text: widget.word.word);
+    _glossCtrl = TextEditingController(text: widget.word.gloss);
     _descCtrl = TextEditingController(text: widget.word.description ?? '');
   }
 
   @override
   void dispose() {
     _wordCtrl.dispose();
+    _glossCtrl.dispose();
     _descCtrl.dispose();
     super.dispose();
   }
@@ -130,6 +133,19 @@ class _AdminWordDetailPageState extends State<AdminWordDetailPage> {
 
                       const SizedBox(height: 16),
 
+                      // ── Gloss ───────────────────────────────────
+                      Text('Gloss (المصطلح الأجنبي)', style: tt.titleSmall),
+                      const SizedBox(height: 6),
+                      _isEditing
+                          ? TextField(
+                              controller: _glossCtrl,
+                              textAlign: TextAlign.right,
+                              decoration:
+                                  const InputDecoration(hintText: 'Gloss'),
+                            )
+                          : _InfoBox(value: widget.word.gloss, tt: tt),
+                      const SizedBox(height: 16),
+
                       // ── شرح الحركة ───────────────────────────────────
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
@@ -201,6 +217,7 @@ class _AdminWordDetailPageState extends State<AdminWordDetailPage> {
                                     UpdateWordEvent(
                                       word: widget.word.copyWith(
                                         word: _wordCtrl.text.trim(),
+                                        gloss: _glossCtrl.text.trim(),
                                         description: _descCtrl.text.trim(),
                                       ),
                                     ),

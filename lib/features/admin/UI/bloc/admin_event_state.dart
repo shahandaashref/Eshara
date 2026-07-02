@@ -29,7 +29,7 @@ class AdminLoadingState extends AdminState {}
 class AdminDashboardState extends AdminState {
   final AdminStats stats;
   final List<AdminWord> recentWords;
-  AdminDashboardState({required this.stats, required this.recentWords});
+  AdminDashboardState({required this.stats, required this.recentWords, required List<AdminCategory> categories});
 }
 
 class AdminWordsState extends AdminState {

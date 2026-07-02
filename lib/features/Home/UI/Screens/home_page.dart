@@ -1,11 +1,13 @@
 import 'package:eshara/Core/Helper/theme.dart';
 import 'package:eshara/Core/Widgets/app_bar.dart';
 import 'package:eshara/features/Home/UI/Widget/feature_card.dart';
+import 'package:eshara/features/Profile/Ui/bloc/profile_bloc.dart';
+import 'package:eshara/features/Profile/Ui/bloc/profile_state.dart';
 import 'package:eshara/features/SignToText/UI/Screens/sign_to_text_page.dart';
 import 'package:eshara/features/Text_to_sign/Ui/Screens/text_to_sign_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_strings.dart';
-import '../../../../core/widgets/app_bottom_nav.dart';
 
 /// الصفحة الرئيسية للتطبيق (Home Page)
 /// تحتوي على رسالة الترحيب والوصول السريع لميزات التطبيق (مثل الترجمة بالكاميرا)
@@ -57,30 +59,29 @@ class _HomePageState extends State<HomePage>
     // جلب تنسيقات النصوص من ثيم التطبيق لتوحيد شكل الخطوط
     final tt = Theme.of(context).textTheme;
 
-    // استخدام Directionality لجعل اتجاه التطبيق من اليمين لليسار (RTL) لدعم اللغة العربية
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: EsharaTheme.background,
-        body: Column(
-          children: [
-            // استدعاء وبناء شريط التطبيق العلوي (AppBar)
-            BuildAppBar(tt: tt),
+    // تم إزالة ويدجت Directionality المكرر من هنا
+    // لأن MainPage (الصفحة الأم) توفره بالفعل
+    return Scaffold(
+      backgroundColor: EsharaTheme.background,
+      body: Column(
+        children: [
+          // استدعاء وبناء شريط التطبيق العلوي (AppBar)
+          BuildAppBar(tt: tt),
 
-            // باقي محتوى الصفحة القابل للتمدد
-            Expanded(
-              child: FadeTransition(
-                opacity: _fadeAnim,
-                child: SlideTransition(
-                  position: _slideAnim,
-                  child: _buildBody(tt),
-                ),
+          // باقي محتوى الصفحة القابل للتمدد
+          Expanded(
+            child: FadeTransition(
+              opacity: _fadeAnim,
+              child: SlideTransition(
+                position: _slideAnim,
+                child: _buildBody(tt),
               ),
             ),
-          ],
+          
+      )],
         ),
-      ),
-    );
+      );
+    
   }
 
   /// دالة بناء محتوى الصفحة الأساسي (الجزء الموجود أسفل الـ AppBar)
@@ -105,56 +106,77 @@ class _HomePageState extends State<HomePage>
 
   /// تصميم بطاقة الترحيب العلوية (Welcome Card)
   Widget _buildWelcomeSection(TextTheme tt) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: EsharaTheme.primaryGradient,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: EsharaTheme.background.withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // أيقونة المستخدم (مكان الصورة الشخصية)
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.25),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.person_rounded,
-              color: Colors.white,
-              size: 28,
-            ),
-          ),
-          const Spacer(),
-          // نصوص ورسائل الترحيب
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                AppStrings.welcomeMessage,
-                style: tt.displayMedium!.copyWith(color: Colors.white),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                AppStrings.welcomeSubtitle,
-                style: tt.bodyMedium!.copyWith(
-                  color: Colors.white.withOpacity(0.85),
-                ),
+    return BlocBuilder<ProfileBloc, ProfileState>(
+      builder: (context, state) {
+        String displayName = '';
+
+        if (state is ProfileLoadedState) {
+          displayName = state.user.name.trim().isNotEmpty
+              ? state.user.name
+              : '';
+        } else if (state is ProfileUpdatedState) {
+          displayName = state.user.name.trim().isNotEmpty
+              ? state.user.name
+              : '';
+        }
+
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: EsharaTheme.primaryGradient,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: EsharaTheme.background.withValues(alpha: 0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
-        ],
-      ),
+          child: Row(
+            children: [
+              // أيقونة المستخدم (مكان الصورة الشخصية)
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.25),
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/profile');
+                  },
+                  icon: Icon(
+                    Icons.person_rounded,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              // نصوص ورسائل الترحيب
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '${AppStrings.welcomeMessage} $displayName',
+                    style: tt.displayMedium!.copyWith(color: Colors.white),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    AppStrings.welcomeSubtitle,
+                    style: tt.bodyMedium!.copyWith(
+                      color: Colors.white.withValues(alpha: 0.85),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -178,7 +200,8 @@ class _HomePageState extends State<HomePage>
           title: AppStrings.textToSign,
           description: AppStrings.textToSignDesc,
           tags: const ['تفاعلي', 'نشاط يومي'],
-          onTap: ()=>_navigateToTextToSign(), // لم يتم برمجة مسار هذه الشاشة بعد
+          onTap: () =>
+              _navigateToTextToSign(), // لم يتم برمجة مسار هذه الشاشة بعد
         ),
       ],
     );
@@ -193,7 +216,7 @@ class _HomePageState extends State<HomePage>
   }
 
   //
-   void _navigateToTextToSign() {
+  void _navigateToTextToSign() {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const TextToSignPage()),

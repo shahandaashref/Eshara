@@ -1,3 +1,4 @@
+import 'dart:convert';
 import '../../Domain/repositories/auth_repository.dart';
 import '../datasources/auth_remote_datasource.dart';
 import '../../Domain/entities/user_entity.dart';
@@ -8,12 +9,49 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<UserEntity> login(String email, String password) async {
-    // 1. استدعاء الـ API اللي هيرجع التوكن (String)
-    final token = await remoteDataSource.login(email, password);
+    final response = await remoteDataSource.login(email, password);
 
-    // 2. تحويل التوكن ده لـ UserEntity
-    // (ملاحظة: تأكد من تمرير الحقول الصحيحة اللي موجودة جوه كلاس UserEntity عندك)
-    return UserEntity(email: email, token: token,);
+    String role = response.role?.trim() ?? 'User';
+
+    try {
+      final parts = response.token.split('.');
+      if (parts.length == 3) {
+        final payload = json.decode(
+          utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
+        );
+
+        if (payload is Map<String, dynamic>) {
+          if (role == 'User') {
+            final payloadRole = payload['role'];
+            if (payloadRole is String && payloadRole.trim().isNotEmpty) {
+              role = payloadRole.trim();
+            }
+          }
+
+          if (role == 'User' && payload['roles'] != null) {
+            final roles = payload['roles'];
+            if (roles is String) {
+              role = roles.trim();
+            } else if (roles is List) {
+              final adminRole = roles
+                  .cast<dynamic>()
+                  .map((e) => e?.toString().trim())
+                  .firstWhere(
+                    (e) => e != null && e.isNotEmpty,
+                    orElse: () => null,
+                  );
+              if (adminRole != null) {
+                role = adminRole;
+              }
+            }
+          }
+        }
+      }
+    } catch (_) {
+      // تجاهل الأخطاء في فك التوكن، سنستخدم الدور الموجود في الاستجابة إذا وجد
+    }
+
+    return UserEntity(email: email, token: response.token, role: role);
   }
 
   @override

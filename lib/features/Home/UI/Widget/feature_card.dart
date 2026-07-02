@@ -31,7 +31,7 @@ class FeatureCard extends StatelessWidget {
           border: Border.all(color: EsharaTheme.border),
           boxShadow: [
             BoxShadow(
-              color: EsharaTheme.primaryBlue.withOpacity(0.05),
+              color: EsharaTheme.primaryBlue.withValues(alpha: 0.05),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),

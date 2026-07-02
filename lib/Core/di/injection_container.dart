@@ -1,5 +1,14 @@
 import 'package:dio/dio.dart';
-import 'package:eshara/features/Authentication/UI/Screens/verify_otp_usecase.dart';
+import 'package:eshara/features/Authentication/Domain/usecases/verify_otp_usecase.dart';
+import 'package:eshara/features/admin/Data/datasources/admin_remote_datasource.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:eshara/features/admin/Data/repositories/admin_repo_impl.dart';
+import 'package:eshara/features/admin/Domain/repositorys/admin_repository.dart';
+import 'package:eshara/features/admin/domain/usecases/admin_usecases.dart';
+import 'package:eshara/features/addword/Data/datasources/add_word_remote_datasource.dart';
+import 'package:eshara/features/addword/Data/repositories/add_word_repository_impl.dart';
+import 'package:eshara/features/addword/Domain/repositories/add_word_repository.dart';
+import 'package:eshara/features/addword/Domain/usecases/submit_word_request_usecase.dart';
 import 'package:eshara/features/Dictionary/Data/datasources/dictionary_remote_datasource.dart';
 import 'package:eshara/features/Dictionary/Data/repositories/dictionary_repo_impl.dart';
 import 'package:eshara/features/Dictionary/Domin/repositories/dictionary_repository.dart';
@@ -23,6 +32,9 @@ import 'package:eshara/features/Authentication/Domain/repositories/auth_reposito
 import 'package:eshara/features/Authentication/Domain/usecases/login_usecase.dart';
 import 'package:eshara/features/Authentication/Domain/usecases/register_usecase.dart';
 import 'package:eshara/features/Authentication/Domain/usecases/resend_otp_usecase.dart';
+
+import 'package:eshara/features/admin/UI/bloc/admin_bloc.dart';
+import 'package:eshara/features/addword/UI/bloc/add_word_bloc.dart';
 import 'package:eshara/features/Authentication/UI/bloc/auth_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:eshara/features/Text_to_sign/domain/usecases/convert_text_to_sign.dart';
@@ -30,13 +42,23 @@ import 'package:eshara/features/Text_to_sign/Ui/bloc/text_to_sign_bloc.dart';
 import 'package:http/http.dart' as http;
 
 final sl = GetIt.instance;
+bool _dependenciesInitialized = false;
 
-void initDependencies() {
+Future<void> initDependencies() async {
+  if (_dependenciesInitialized) return;
+  _dependenciesInitialized = true;
+
+  // 0. Shared Preferences
+  sl.registerSingletonAsync<SharedPreferences>(
+    () async => await SharedPreferences.getInstance(),
+  );
+  await sl.isReady<SharedPreferences>();
+
   // ── Authentication ────────────────────────────────────────────────────────
 
   // 1. Data Sources
   sl.registerLazySingleton<AuthRemoteDataSource>(
-    () => AuthRemoteDataSourceImpl(client: sl()),
+    () => AuthRemoteDataSourceImpl(client: sl(), sharedPreferences: sl()),
   );
 
   // 2. Repositories
@@ -56,7 +78,7 @@ void initDependencies() {
       loginUseCase: sl(),
       registerUseCase: sl(),
       verifyOtpUseCase: sl(),
-      resendOtpUseCase: sl(),
+      resendOtpUseCase: sl(), // تم إصلاح الاعتمادية الناقصة
     ),
   );
 
@@ -105,7 +127,21 @@ void initDependencies() {
   // ── Dictionary ───────────────────────────────────────────────────────────
   // ── External ──
   // لازم نسجل Dio كـ Singleton عشان الـ Data Source يشوفه
-  sl.registerLazySingleton(() => Dio());
+  sl.registerLazySingleton<Dio>(() {
+    final dio = Dio(BaseOptions(baseUrl: 'https://eshara.runasp.net'));
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          final token = sl<SharedPreferences>().getString('auth_token');
+          if (token != null && token.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          return handler.next(options);
+        },
+      ),
+    );
+    return dio;
+  });
   sl.registerLazySingleton(() => http.Client());
 
   // ── Dictionary Feature ──
@@ -131,6 +167,20 @@ void initDependencies() {
     () => DictionaryBloc(getSignsUseCase: sl(), searchSignsUseCase: sl()),
   );
 
+  // ── Add Word Feature ─────────────────────────────────────────────────────
+  sl.registerLazySingleton<AddWordRemoteDataSource>(
+    () => AddWordRemoteDataSourceImpl(dio: sl()),
+  );
+  sl.registerLazySingleton<AddWordRepository>(
+    () => AddWordRepositoryImpl(remoteDataSource: sl()),
+  );
+  sl.registerLazySingleton<SubmitWordRequestUseCase>(
+    () => SubmitWordRequestUseCase(sl<AddWordRepository>()),
+  );
+  sl.registerFactory<AddWordBloc>(
+    () => AddWordBloc(submitWordRequestUseCase: sl<SubmitWordRequestUseCase>()),
+  );
+
   // ── Text To Sign ───────────────────────────────────────────────────────────
 
   // 1. تسجيل الـ UseCase الخاص بـ Text To Sign
@@ -139,6 +189,50 @@ void initDependencies() {
 
   // 2. استخدام sl() بدلاً من null حتى يقوم GetIt بالبحث عن الـ UseCase وحقنه بنجاح
   sl.registerFactory(() => TextToSignBloc(convertTextToSignUseCase: sl()));
+
+  // ── Admin ──────────────────────────────────────────────────────────────
+
+  // 1. Data Sources
+  sl.registerLazySingleton<AdminRemoteDataSource>(
+    () => AdminRemoteDataSourceImpl(dio: sl()),
+  );
+
+  // 2. Repositories
+  sl.registerLazySingleton<AdminRepository>(
+    () => AdminRepositoryImpl(remoteDataSource: sl()),
+  );
+
+  // 3. Use Cases
+  sl.registerLazySingleton(() => GetStatsUseCase(sl()));
+  sl.registerLazySingleton(() => GetWordsUseCase(sl()));
+  sl.registerLazySingleton(() => AddWordUseCase(sl()));
+  sl.registerLazySingleton(() => UpdateWordUseCase(sl()));
+  sl.registerLazySingleton(() => DeleteWordUseCase(sl()));
+  sl.registerLazySingleton(() => GetCategoriesUseCase(sl()));
+  sl.registerLazySingleton(() => AddCategoryUseCase(sl()));
+  sl.registerLazySingleton(() => DeleteCategoryUseCase(sl()));
+  sl.registerLazySingleton(() => GetWordRequestsUseCase(sl()));
+  sl.registerLazySingleton(() => AcceptRequestUseCase(sl()));
+  sl.registerLazySingleton(() => RejectRequestUseCase(sl()));
+  sl.registerLazySingleton(() => GetUsersUseCase(sl()));
+
+  // 4. BLoC
+  sl.registerFactory<AdminBloc>(
+    () => AdminBloc(
+      getStats: sl(),
+      getWords: sl(),
+      addWord: sl(),
+      updateWord: sl(),
+      deleteWord: sl(),
+      getCategories: sl(),
+      addCategory: sl(),
+      deleteCategory: sl(),
+      getRequests: sl(),
+      acceptRequest: sl(),
+      rejectRequest: sl(),
+      getUsers: sl(),
+    ),
+  );
 }
 
 /// top-level function بـ return type صريح

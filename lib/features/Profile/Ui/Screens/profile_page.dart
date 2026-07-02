@@ -24,13 +24,6 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   @override
-  void initState() {
-    super.initState();
-    // بنجيب بيانات المستخدم لما الصفحة تفتح
-    context.read<ProfileBloc>().add(LoadProfileEvent());
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -49,6 +42,12 @@ class _ProfilePageState extends State<ProfilePage> {
                   if (state is ProfileUpdatedState) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('تم حفظ التغييرات بنجاح')),
+                    );
+                  } else if (state is ProfileErrorState) {
+                    // عرض أي خطأ يحدث، بما في ذلك أخطاء الشبكة
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content: Text('حدث خطأ: ${state.message}')),
                     );
                   }
                 },
@@ -145,7 +144,7 @@ class _ProfilePageState extends State<ProfilePage> {
   // ── Body ───────────────────────────────────────────────────────────────────
   Widget _buildBody(BuildContext context, ProfileState state, user) {
     final tt = Theme.of(context).textTheme;
-    final isUpdating = state is ProfileUpdatingState;
+   // final isUpdating = state is ProfileUpdatingState;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -163,11 +162,21 @@ class _ProfilePageState extends State<ProfilePage> {
                     // الصورة الشخصية
                     CircleAvatar(
                       radius: 48,
-                      backgroundColor: EsharaTheme.primaryBlue,
-                      child: Text(
-                        user.name.isNotEmpty ? user.name[0] : 'أ',
-                        style: tt.displayMedium!.copyWith(color: Colors.white),
-                      ),
+                      backgroundColor: EsharaTheme.surfaceVariant,
+                      backgroundImage:
+                          (user.avatarUrl != null && user.avatarUrl!.isNotEmpty)
+                          ? NetworkImage(user.avatarUrl!)
+                          : null,
+                      child: (user.avatarUrl == null || user.avatarUrl!.isEmpty)
+                          ? Text(
+                              user.name.isNotEmpty
+                                  ? user.name[0].toUpperCase()
+                                  : 'U',
+                              style: tt.displayMedium!.copyWith(
+                                color: EsharaTheme.primaryBlue,
+                              ),
+                            )
+                          : null,
                     ),
                     // زرار التعديل
                     Positioned(
@@ -369,7 +378,7 @@ class _LogoutSheet extends StatelessWidget {
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: EsharaTheme.error.withOpacity(0.1),
+                color: EsharaTheme.error.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(

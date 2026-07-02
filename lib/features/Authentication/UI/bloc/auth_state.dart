@@ -8,9 +8,9 @@ class AuthLoading extends AuthState {}
 
 // حالة النجاح (بناخد معانا بيانات اليوزر)
 class AuthSuccess extends AuthState {
-  final String message;
+  final String? message;
   final UserEntity? user;
-  AuthSuccess(this.message, {this.user});
+  AuthSuccess({this.message, this.user});
 }
 
 // حالة لرسائل النجاح التي لا تحتاج لانتقال لصفحة أخرى (مثل إعادة إرسال الكود)

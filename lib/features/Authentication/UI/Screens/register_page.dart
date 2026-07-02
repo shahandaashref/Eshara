@@ -129,11 +129,14 @@ class _RegisterPageState extends State<RegisterPage> {
                       ); // هنا تم استخدام SnackbarHelper
 
                       // توجيه المستخدم لصفحة التحقق مع إرسال الإيميل
-                      Navigator.pushReplacementNamed(
-                        context,
-                        '/verify_email',
-                        arguments: _emailController.text.trim(),
-                      );
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (!mounted) return;
+                        Navigator.pushReplacementNamed(
+                          context,
+                          '/verify_email',
+                          arguments: _emailController.text.trim(),
+                        );
+                      });
                     } else if (state is AuthFailure) {
                       SnackbarHelper.showCustomSnackBar(
                         context,
@@ -152,11 +155,14 @@ class _RegisterPageState extends State<RegisterPage> {
                           state.errorMessage.contains('Email already exists')) {
                         // توجيه المستخدم لصفحة التحقق من الإيميل بدلاً من التسجيل مرة أخرى
                         if (_emailController.text.trim().isNotEmpty) {
-                          Navigator.pushReplacementNamed(
-                            context,
-                            '/verify_email',
-                            arguments: _emailController.text.trim(),
-                          );
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (!mounted) return;
+                            Navigator.pushReplacementNamed(
+                              context,
+                              '/verify_email',
+                              arguments: _emailController.text.trim(),
+                            );
+                          });
                         }
                       }
                     }

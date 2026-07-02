@@ -28,22 +28,24 @@ class AdminAppBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          if (actions != null) ...actions!
-          else const SizedBox(width: 36),
+          if (actions != null) ...actions! else const SizedBox(width: 36),
           const Spacer(),
           Text(title, style: tt.headlineLarge),
           const Spacer(),
           if (showBack)
             GestureDetector(
-              onTap: () => Navigator.maybePop(context),
+              onTap: () => Navigator.pop(context),
               child: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: EsharaTheme.surfaceVariant,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.arrow_forward_ios_rounded,
-                    size: 16, color: EsharaTheme.textPrimary),
+                child: const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 16,
+                  color: EsharaTheme.textPrimary,
+                ),
               ),
             )
           else
@@ -79,14 +81,26 @@ class AdminStatCard extends StatelessWidget {
         color: EsharaTheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: EsharaTheme.border),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(value, style: tt.displayMedium!.copyWith(color: EsharaTheme.primaryBlue, fontWeight: FontWeight.w700)),
+              Text(
+                value,
+                style: tt.displayMedium!.copyWith(
+                  color: EsharaTheme.primaryBlue,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
               const SizedBox(height: 2),
               Text(label, style: tt.bodySmall),
             ],
@@ -94,7 +108,10 @@ class AdminStatCard extends StatelessWidget {
           const Spacer(),
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: Icon(icon, color: color, size: 22),
           ),
         ],
@@ -135,14 +152,25 @@ class AdminWordTile extends StatelessWidget {
           // أزرار التعديل والحذف
           Row(
             children: [
-              _ActionBtn(icon: Icons.edit_rounded, color: EsharaTheme.primaryBlue, onTap: onEdit),
+              _ActionBtn(
+                icon: Icons.edit_rounded,
+                color: EsharaTheme.primaryBlue,
+                onTap: onEdit,
+              ),
               const SizedBox(width: 8),
-              _ActionBtn(icon: Icons.delete_rounded, color: EsharaTheme.error, onTap: onDelete),
+              _ActionBtn(
+                icon: Icons.delete_rounded,
+                color: EsharaTheme.error,
+                onTap: onDelete,
+              ),
             ],
           ),
           const Spacer(),
           // اسم الكلمة
-          Text(word, style: tt.titleMedium!.copyWith(color: EsharaTheme.textPrimary)),
+          Text(
+            word,
+            style: tt.titleMedium!.copyWith(color: EsharaTheme.textPrimary),
+          ),
           const SizedBox(width: 12),
           // صورة مصغرة
           ClipRRect(
@@ -151,8 +179,11 @@ class AdminWordTile extends StatelessWidget {
               width: 48,
               height: 48,
               color: EsharaTheme.surfaceVariant,
-              child: const Icon(Icons.play_circle_outline_rounded,
-                  color: EsharaTheme.primaryBlue, size: 28),
+              child: const Icon(
+                Icons.play_circle_outline_rounded,
+                color: EsharaTheme.primaryBlue,
+                size: 28,
+              ),
             ),
           ),
         ],
@@ -165,7 +196,11 @@ class _ActionBtn extends StatelessWidget {
   final IconData icon;
   final Color color;
   final VoidCallback onTap;
-  const _ActionBtn({required this.icon, required this.color, required this.onTap});
+  const _ActionBtn({
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -174,7 +209,7 @@ class _ActionBtn extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(7),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(icon, color: color, size: 16),
@@ -208,19 +243,35 @@ class ConfirmDeleteSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 60, height: 60,
-              decoration: BoxDecoration(color: EsharaTheme.error.withOpacity(0.1), shape: BoxShape.circle),
-              child: const Icon(Icons.delete_rounded, color: EsharaTheme.error, size: 28),
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: EsharaTheme.error.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.delete_rounded,
+                color: EsharaTheme.error,
+                size: 28,
+              ),
             ),
             const SizedBox(height: 14),
-            Text(title, style: tt.headlineMedium!.copyWith(color: EsharaTheme.textPrimary)),
+            Text(
+              title,
+              style: tt.headlineMedium!.copyWith(
+                color: EsharaTheme.textPrimary,
+              ),
+            ),
             const SizedBox(height: 6),
             Text(subtitle, style: tt.bodyMedium, textAlign: TextAlign.center),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () { Navigator.pop(context); onConfirm(); },
+                onPressed: () {
+                  Navigator.pop(context);
+                  onConfirm();
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: EsharaTheme.error,
                   side: const BorderSide(color: EsharaTheme.error),

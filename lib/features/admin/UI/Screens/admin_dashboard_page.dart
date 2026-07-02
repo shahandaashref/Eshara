@@ -41,19 +41,46 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               child: BlocConsumer<AdminBloc, AdminState>(
                 listener: (context, state) {
                   if (state is AdminActionSuccessState) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(state.message)),
-                    );
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(state.message)));
                   }
                 },
                 builder: (context, state) {
                   if (state is AdminLoadingState) {
-                    return const Center(child: CircularProgressIndicator(color: EsharaTheme.primaryBlue));
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: EsharaTheme.primaryBlue,
+                      ),
+                    );
                   }
                   if (state is AdminDashboardState) {
                     return _buildDashboard(context, tt, state);
                   }
-                  return const SizedBox();
+                  if (state is AdminActionSuccessState &&
+                      state.previousState is AdminDashboardState) {
+                    return _buildDashboard(
+                      context,
+                      tt,
+                      state.previousState as AdminDashboardState,
+                    );
+                  }
+                  if (state is AdminErrorState) {
+                    return Center(
+                      child: Text(
+                        state.message,
+                        style: tt.bodyLarge,
+                        textAlign: TextAlign.center,
+                      ),
+                    );
+                  }
+                  return Center(
+                    child: Text(
+                      'جاري إعادة تحميل لوحة التحكم...',
+                      style: tt.bodyLarge,
+                      textAlign: TextAlign.center,
+                    ),
+                  );
                 },
               ),
             ),
@@ -63,7 +90,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
-  Widget _buildDashboard(BuildContext context, TextTheme tt, AdminDashboardState state) {
+  Widget _buildDashboard(
+    BuildContext context,
+    TextTheme tt,
+    AdminDashboardState state,
+  ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -95,39 +126,82 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           const SizedBox(height: 16),
 
           // ── الإجراءات السريعة ────────────────────────────────────────
-          Text('الإجراءات الطارئة', style: tt.titleLarge!.copyWith(color: EsharaTheme.textPrimary)),
+          Text(
+            'الإجراءات الطارئة',
+            style: tt.titleLarge!.copyWith(color: EsharaTheme.textPrimary),
+          ),
           const SizedBox(height: 10),
 
-          _QuickActionRow(
-            label: 'إضافة فئة جديدة',
-            icon: Icons.create_new_folder_rounded,
-            onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => BlocProvider.value(
-                    value: context.read<AdminBloc>(),
-                    child: const AdminCategoriesPage()))),
-          ),
-          _QuickActionRow(
-            label: 'إضافة كلمة جديدة',
-            icon: Icons.add_box_rounded,
-            onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => BlocProvider.value(
-                    value: context.read<AdminBloc>(),
-                    child: const AdminWordsPage()))),
-          ),
-          _QuickActionRow(
-            label: 'طلبات الكلمات',
-            icon: Icons.mark_email_unread_rounded,
-            badgeCount: state.stats.pendingRequests,
-            onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => BlocProvider.value(
-                    value: context.read<AdminBloc>(),
-                    child: const AdminRequestsPage()))),
+          Column(
+            children: [
+              _QuickActionRow(
+                label: 'إضافة فئة جديدة',
+                icon: Icons.create_new_folder_rounded,
+                onTap: () {
+                  final adminBloc = context.read<AdminBloc>();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => BlocProvider.value(
+                        value: adminBloc,
+                        child: const AdminCategoriesPage(),
+                      ),
+                    ),
+                  ).then((_) {
+                    if (!mounted) return;
+                    adminBloc.add(LoadDashboardEvent());
+                  });
+                },
+              ),
+              _QuickActionRow(
+                label: 'إضافة كلمة جديدة',
+                icon: Icons.add_box_rounded,
+                onTap: () {
+                  final adminBloc = context.read<AdminBloc>();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => BlocProvider.value(
+                        value: adminBloc,
+                        child: const AdminWordsPage(),
+                      ),
+                    ),
+                  ).then((_) {
+                    if (!mounted) return;
+                    adminBloc.add(LoadDashboardEvent());
+                  });
+                },
+              ),
+              _QuickActionRow(
+                label: 'طلبات الكلمات',
+                icon: Icons.mark_email_unread_rounded,
+                badgeCount: state.stats.pendingRequests,
+                onTap: () {
+                  final adminBloc = context.read<AdminBloc>();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => BlocProvider.value(
+                        value: adminBloc,
+                        child: const AdminRequestsPage(),
+                      ),
+                    ),
+                  ).then((_) {
+                    if (!mounted) return;
+                    adminBloc.add(LoadDashboardEvent());
+                  });
+                },
+              ),
+            ],
           ),
 
           const SizedBox(height: 20),
 
           // ── الفئات الطارئة ────────────────────────────────────────────
-          Text('الفئات الطارئة', style: tt.titleLarge!.copyWith(color: EsharaTheme.textPrimary)),
+          Text(
+            'الفئات الطارئة',
+            style: tt.titleLarge!.copyWith(color: EsharaTheme.textPrimary),
+          ),
           const SizedBox(height: 10),
           _CategoryStatRow(label: 'طبية', count: 15),
           _CategoryStatRow(label: 'تعليم', count: 20),
@@ -146,11 +220,15 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text('نبذة عن المسؤول اليوم',
-                    style: tt.titleMedium!.copyWith(color: Colors.white)),
+                Text(
+                  'نبذة عن المسؤول اليوم',
+                  style: tt.titleMedium!.copyWith(color: Colors.white),
+                ),
                 const SizedBox(height: 6),
-                Text('لديك ${state.stats.pendingRequests} طلبات معلقة تحتاج مراجعة',
-                    style: tt.bodySmall!.copyWith(color: Colors.white70)),
+                Text(
+                  'لديك ${state.stats.pendingRequests} طلبات معلقة تحتاج مراجعة',
+                  style: tt.bodySmall!.copyWith(color: Colors.white70),
+                ),
               ],
             ),
           ),
@@ -165,7 +243,12 @@ class _QuickActionRow extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
   final int? badgeCount;
-  const _QuickActionRow({required this.label, required this.icon, required this.onTap, this.badgeCount});
+  const _QuickActionRow({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+    this.badgeCount,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -186,13 +269,26 @@ class _QuickActionRow extends StatelessWidget {
             if (badgeCount != null && badgeCount! > 0) ...[
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(color: EsharaTheme.error, borderRadius: BorderRadius.circular(10)),
-                child: Text('$badgeCount', style: const TextStyle(color: Colors.white, fontSize: 11, fontFamily: 'Cairo')),
+                decoration: BoxDecoration(
+                  color: EsharaTheme.error,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '$badgeCount',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontFamily: 'Cairo',
+                  ),
+                ),
               ),
               const SizedBox(width: 8),
             ],
             const Spacer(),
-            Text(label, style: tt.bodyLarge!.copyWith(color: EsharaTheme.textPrimary)),
+            Text(
+              label,
+              style: tt.bodyLarge!.copyWith(color: EsharaTheme.textPrimary),
+            ),
             const SizedBox(width: 10),
             Icon(icon, color: EsharaTheme.primaryBlue, size: 20),
           ],
@@ -214,9 +310,18 @@ class _CategoryStatRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          Text('$count', style: tt.bodyMedium!.copyWith(color: EsharaTheme.primaryBlue, fontWeight: FontWeight.w600)),
+          Text(
+            '$count',
+            style: tt.bodyMedium!.copyWith(
+              color: EsharaTheme.primaryBlue,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           const Spacer(),
-          Text(label, style: tt.bodyMedium!.copyWith(color: EsharaTheme.textPrimary)),
+          Text(
+            label,
+            style: tt.bodyMedium!.copyWith(color: EsharaTheme.textPrimary),
+          ),
         ],
       ),
     );

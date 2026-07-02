@@ -39,23 +39,42 @@ class _AdminWordsPageState extends State<AdminWordsPage> {
               title: 'كلمات الفئة',
               actions: [
                 // زرار إضافة كلمة جديدة
-                GestureDetector(
-                  onTap: () => _showAddWordSheet(context),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                    decoration: BoxDecoration(
-                      gradient: EsharaTheme.primaryGradient,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.add_rounded, color: Colors.white, size: 16),
-                        const SizedBox(width: 4),
-                        Text('كلمة جديدة',
-                            style: tt.labelMedium!.copyWith(color: Colors.white)),
-                      ],
-                    ),
-                  ),
+                BlocBuilder<AdminBloc, AdminState>(
+                  builder: (context, state) {
+                    return GestureDetector(
+                      onTap: () {
+                        if (state is AdminWordsState) {
+                          _showAddWordSheet(context, state.categories);
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 7,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: EsharaTheme.primaryGradient,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.add_rounded,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'كلمة جديدة',
+                              style: tt.labelMedium!.copyWith(
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
@@ -63,13 +82,18 @@ class _AdminWordsPageState extends State<AdminWordsPage> {
               child: BlocConsumer<AdminBloc, AdminState>(
                 listener: (context, state) {
                   if (state is AdminActionSuccessState) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(state.message)));
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(state.message)));
                   }
                 },
                 builder: (context, state) {
                   if (state is AdminLoadingState) {
-                    return const Center(child: CircularProgressIndicator(color: EsharaTheme.primaryBlue));
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: EsharaTheme.primaryBlue,
+                      ),
+                    );
                   }
                   if (state is AdminWordsState) {
                     return _buildContent(context, tt, state);
@@ -84,7 +108,11 @@ class _AdminWordsPageState extends State<AdminWordsPage> {
     );
   }
 
-  Widget _buildContent(BuildContext context, TextTheme tt, AdminWordsState state) {
+  Widget _buildContent(
+    BuildContext context,
+    TextTheme tt,
+    AdminWordsState state,
+  ) {
     return Column(
       children: [
         // ── Category filter chips ────────────────────────────────────
@@ -97,23 +125,43 @@ class _AdminWordsPageState extends State<AdminWordsPage> {
             separatorBuilder: (_, __) => const SizedBox(width: 8),
             itemBuilder: (_, i) {
               final cat = state.categories[i];
-              final selected = _selectedCategory == cat.id ||
+              final selected =
+                  _selectedCategory == cat.id ||
                   (_selectedCategory == null && cat.name == 'الكل');
               return GestureDetector(
                 onTap: () {
-                  setState(() => _selectedCategory = cat.name == 'الكل' ? null : cat.id);
-                  context.read<AdminBloc>().add(LoadWordsEvent(categoryId: _selectedCategory));
+                  setState(
+                    () =>
+                        _selectedCategory = cat.name == 'الكل' ? null : cat.id,
+                  );
+                  context.read<AdminBloc>().add(
+                    LoadWordsEvent(categoryId: _selectedCategory),
+                  );
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: selected ? EsharaTheme.primaryBlue : EsharaTheme.surface,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: selected ? EsharaTheme.primaryBlue : EsharaTheme.border),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 6,
                   ),
-                  child: Text(cat.name,
-                      style: tt.labelMedium!.copyWith(
-                          color: selected ? Colors.white : EsharaTheme.textSecondary)),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? EsharaTheme.primaryBlue
+                        : EsharaTheme.surface,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: selected
+                          ? EsharaTheme.primaryBlue
+                          : EsharaTheme.border,
+                    ),
+                  ),
+                  child: Text(
+                    cat.name,
+                    style: tt.labelMedium!.copyWith(
+                      color: selected
+                          ? Colors.white
+                          : EsharaTheme.textSecondary,
+                    ),
+                  ),
                 ),
               );
             },
@@ -130,10 +178,15 @@ class _AdminWordsPageState extends State<AdminWordsPage> {
               return AdminWordTile(
                 word: word.word,
                 thumbnailUrl: word.thumbnailUrl,
-                onEdit: () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => BlocProvider.value(
-                        value: context.read<AdminBloc>(),
-                        child: AdminWordDetailPage(word: word, isEdit: true)))),
+                onEdit: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => BlocProvider.value(
+                      value: context.read<AdminBloc>(),
+                      child: AdminWordDetailPage(word: word, isEdit: true),
+                    ),
+                  ),
+                ),
                 onDelete: () => _showDeleteSheet(context, word),
               );
             },
@@ -144,15 +197,18 @@ class _AdminWordsPageState extends State<AdminWordsPage> {
   }
 
   // ── Add Word Sheet ─────────────────────────────────────────────────────────
-  void _showAddWordSheet(BuildContext context) {
+  void _showAddWordSheet(BuildContext context, List<AdminCategory> categories) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (_) => BlocProvider.value(
         value: context.read<AdminBloc>(),
-        child: _AddWordSheet(),
+        child: _AddWordSheet(
+          categories: categories.where((c) => c.id != 'all').toList(),
+        ),
       ),
     );
   }
@@ -162,11 +218,13 @@ class _AdminWordsPageState extends State<AdminWordsPage> {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (_) => ConfirmDeleteSheet(
         title: 'حذف الكلمة',
         subtitle: 'هل أنت متأكد من حذف كلمة "${word.word}"؟',
-        onConfirm: () => context.read<AdminBloc>().add(DeleteWordEvent(wordId: word.id)),
+        onConfirm: () =>
+            context.read<AdminBloc>().add(DeleteWordEvent(wordId: word.id)),
       ),
     );
   }
@@ -174,19 +232,24 @@ class _AdminWordsPageState extends State<AdminWordsPage> {
 
 // ── Add Word Bottom Sheet ──────────────────────────────────────────────────
 class _AddWordSheet extends StatefulWidget {
+  final List<AdminCategory> categories;
+  const _AddWordSheet({required this.categories});
+
   @override
   State<_AddWordSheet> createState() => _AddWordSheetState();
 }
 
 class _AddWordSheetState extends State<_AddWordSheet> {
   final _wordCtrl = TextEditingController();
+  final _glossCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
-  String _selectedCategory = 'تحيات';
+  String? _selectedCategoryId;
   bool _videoPicked = false;
 
   @override
   void dispose() {
     _wordCtrl.dispose();
+    _glossCtrl.dispose();
     _descCtrl.dispose();
     super.dispose();
   }
@@ -199,7 +262,9 @@ class _AddWordSheetState extends State<_AddWordSheet> {
       textDirection: TextDirection.rtl,
       child: Padding(
         padding: EdgeInsets.only(
-          left: 20, right: 20, top: 20,
+          left: 20,
+          right: 20,
+          top: 20,
           bottom: MediaQuery.of(context).viewInsets.bottom + 20,
         ),
         child: SingleChildScrollView(
@@ -207,7 +272,12 @@ class _AddWordSheetState extends State<_AddWordSheet> {
             crossAxisAlignment: CrossAxisAlignment.end,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('إضافة كلمة جديدة', style: tt.headlineMedium!.copyWith(color: EsharaTheme.textPrimary)),
+              Text(
+                'إضافة كلمة جديدة',
+                style: tt.headlineMedium!.copyWith(
+                  color: EsharaTheme.textPrimary,
+                ),
+              ),
               const SizedBox(height: 16),
 
               // الكلمة
@@ -215,6 +285,16 @@ class _AddWordSheetState extends State<_AddWordSheet> {
                 controller: _wordCtrl,
                 textAlign: TextAlign.right,
                 decoration: const InputDecoration(hintText: 'الكلمة'),
+              ),
+              const SizedBox(height: 12),
+
+              // Gloss
+              TextField(
+                controller: _glossCtrl,
+                textAlign: TextAlign.right,
+                decoration: const InputDecoration(
+                  hintText: 'Gloss (المصطلح الأجنبي)',
+                ),
               ),
               const SizedBox(height: 12),
 
@@ -228,13 +308,19 @@ class _AddWordSheetState extends State<_AddWordSheet> {
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
-                    value: _selectedCategory,
+                    value: _selectedCategoryId,
+                    hint: const Text('اختر الفئة'),
                     isExpanded: true,
                     alignment: AlignmentDirectional.centerEnd,
-                    items: ['تحيات', 'عائلة', 'تعليم', 'طبية']
-                        .map((c) => DropdownMenuItem(value: c, child: Text(c, textAlign: TextAlign.right)))
+                    items: widget.categories
+                        .map(
+                          (c) => DropdownMenuItem(
+                            value: c.id,
+                            child: Text(c.name, textAlign: TextAlign.right),
+                          ),
+                        )
                         .toList(),
-                    onChanged: (v) => setState(() => _selectedCategory = v!),
+                    onChanged: (v) => setState(() => _selectedCategoryId = v),
                   ),
                 ),
               ),
@@ -250,20 +336,35 @@ class _AddWordSheetState extends State<_AddWordSheet> {
                     color: EsharaTheme.surfaceVariant,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                        color: _videoPicked ? EsharaTheme.primaryBlue : EsharaTheme.border),
+                      color: _videoPicked
+                          ? EsharaTheme.primaryBlue
+                          : EsharaTheme.border,
+                    ),
                   ),
                   child: _videoPicked
-                      ? Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                          Text('video_sign.mp4', style: tt.bodyMedium),
-                          const SizedBox(width: 8),
-                          const Icon(Icons.video_file_rounded, color: EsharaTheme.primaryBlue),
-                        ])
-                      : Column(children: [
-                          const Icon(Icons.cloud_upload_outlined, color: EsharaTheme.textHint, size: 32),
-                          const SizedBox(height: 6),
-                          Text('رفع فيديو من المعرض', style: tt.bodyMedium),
-                          Text('يدعم ملفات MP4، MOV', style: tt.bodySmall),
-                        ]),
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text('video_sign.mp4', style: tt.bodyMedium),
+                            const SizedBox(width: 8),
+                            const Icon(
+                              Icons.video_file_rounded,
+                              color: EsharaTheme.primaryBlue,
+                            ),
+                          ],
+                        )
+                      : Column(
+                          children: [
+                            const Icon(
+                              Icons.cloud_upload_outlined,
+                              color: EsharaTheme.textHint,
+                              size: 32,
+                            ),
+                            const SizedBox(height: 6),
+                            Text('رفع فيديو من المعرض', style: tt.bodyMedium),
+                            Text('يدعم ملفات MP4، MOV', style: tt.bodySmall),
+                          ],
+                        ),
                 ),
               ),
 
@@ -271,8 +372,10 @@ class _AddWordSheetState extends State<_AddWordSheet> {
                 const SizedBox(height: 8),
                 GestureDetector(
                   onTap: () => setState(() => _videoPicked = false),
-                  child: Text('إلغاء العملية',
-                      style: tt.labelMedium!.copyWith(color: EsharaTheme.error)),
+                  child: Text(
+                    'إلغاء العملية',
+                    style: tt.labelMedium!.copyWith(color: EsharaTheme.error),
+                  ),
                 ),
               ],
 
@@ -283,7 +386,9 @@ class _AddWordSheetState extends State<_AddWordSheet> {
                 controller: _descCtrl,
                 textAlign: TextAlign.right,
                 maxLines: 2,
-                decoration: const InputDecoration(hintText: 'وصف الكلمة (اختياري)'),
+                decoration: const InputDecoration(
+                  hintText: 'وصف الكلمة (اختياري)',
+                ),
               ),
               const SizedBox(height: 20),
 
@@ -291,16 +396,22 @@ class _AddWordSheetState extends State<_AddWordSheet> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    if (_wordCtrl.text.trim().isEmpty) return;
-                    context.read<AdminBloc>().add(AddWordEvent(
-                      word: AdminWord(
-                        id: '',
-                        word: _wordCtrl.text.trim(),
-                        category: _selectedCategory,
-                        description: _descCtrl.text.trim(),
-                        createdAt: DateTime.now(),
+                    if (_wordCtrl.text.trim().isEmpty ||
+                        _glossCtrl.text.trim().isEmpty ||
+                        _selectedCategoryId == null)
+                      return;
+                    context.read<AdminBloc>().add(
+                      AddWordEvent(
+                        word: AdminWord(
+                          id: '',
+                          word: _wordCtrl.text.trim(),
+                          gloss: _glossCtrl.text.trim(),
+                          categoryId: _selectedCategoryId,
+                          description: _descCtrl.text.trim(),
+                          createdAt: DateTime.now(),
+                        ),
                       ),
-                    ));
+                    );
                     Navigator.pop(context);
                   },
                   child: const Text('إضافة'),

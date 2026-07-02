@@ -9,7 +9,8 @@ import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
 
 class VerifyEmailPage extends StatefulWidget {
-  const VerifyEmailPage({super.key});
+  final String email;
+  const VerifyEmailPage({super.key, required this.email});
 
   @override
   State<VerifyEmailPage> createState() => _VerifyEmailPageState();
@@ -20,7 +21,6 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
     6,
     (_) => TextEditingController(),
   );
-  String? email;
   Timer? _timer;
   int _secondsRemaining = 60;
   bool _canResend = false;
@@ -65,9 +65,9 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
   void _verifyCode(BuildContext context) {
     FocusManager.instance.primaryFocus?.unfocus();
     String otpCode = _otpControllers.map((c) => c.text).join();
-    if (otpCode.length == 6 && email != null) {
+    if (otpCode.length == 6) {
       _isVerifyingAction = true; // المستخدم يحاول التحقق
-      context.read<AuthBloc>().add(VerifyOtpEvent(email!, otpCode));
+      context.read<AuthBloc>().add(VerifyOtpEvent(widget.email, otpCode));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('يرجى إدخال الرمز المكون من 6 أرقام')),
@@ -77,8 +77,6 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
 
   @override
   Widget build(BuildContext context) {
-    email ??= ModalRoute.of(context)?.settings.arguments as String?;
-
     return Scaffold(
       body: headerAppBarAndBackgroundAuth(
         context,
@@ -104,7 +102,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
 
                 const SizedBox(height: 15),
                 Text(
-                  "لقد أرسلنا كود إعادة تعيين إلى\n${email ?? 'بريدك الإلكتروني'}\nالمكون من 6 أرقام للصندوق الوارد في البريد",
+                  "لقد أرسلنا كود إعادة تعيين إلى\n${widget.email}\nالمكون من 6 أرقام للصندوق الوارد في البريد",
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: EsharaTheme.textSecondary,
                   ),
@@ -134,7 +132,9 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
                           const SnackBar(content: Text('تم التحقق بنجاح ✅')),
                         );
                         // توجيه لصفحة اللوجين أو الرئيسية بناءً على الـ Flow
-                        Navigator.pushReplacementNamed(context, '/login');
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          Navigator.pushReplacementNamed(context, '/login');
+                        });
                       } else if (state is AuthActionSuccess) {
                         ScaffoldMessenger.of(
                           context,
@@ -142,7 +142,9 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
 
                         // إذا كان الإجراء "تحقق" ونجح، ننقله للصفحة التالية
                         if (_isVerifyingAction) {
-                          Navigator.pushReplacementNamed(context, '/login');
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            Navigator.pushReplacementNamed(context, '/login');
+                          });
                         }
                       } else if (state is AuthFailure) {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -178,22 +180,12 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
                         return TextButton(
                           onPressed: (_canResend && !isLoading)
                               ? () {
-                                  if (email != null) {
-                                    _isVerifyingAction =
-                                        false; // المستخدم يطلب إعادة الإرسال
-                                    context.read<AuthBloc>().add(
-                                      ResendOtpEvent(email!),
-                                    );
-                                    _startTimer(); // بدء المؤقت من جديد بعد الضغط
-                                  } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'البريد الإلكتروني غير متوفر',
-                                        ),
-                                      ),
-                                    );
-                                  }
+                                  _isVerifyingAction =
+                                      false; // المستخدم يطلب إعادة الإرسال
+                                  context.read<AuthBloc>().add(
+                                    ResendOtpEvent(widget.email),
+                                  );
+                                  _startTimer(); // بدء المؤقت من جديد بعد الضغط
                                 }
                               : null, // تعطيل الزر إذا كان المؤقت يعمل
                           child: isLoading
