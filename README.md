@@ -1,4 +1,4 @@
-# Eshara (إشارة) 
+# Eshara (إشارة)
 
 <p align="center">
   <img src="path/to/your/logo.png" alt="Eshara Logo" width="150"/>
@@ -21,6 +21,7 @@
 - ✨ Features
 - 🛠️ Tech Stack & Architecture
 - 🚀 Getting Started
+- 📚 Project Documentation
 - 🌍 Localization
 - 🤝 Contributing
 - 📝 License
@@ -108,12 +109,14 @@ Follow these instructions to get the project up and running on your local machin
 ### Installation & Running
 
 1.  **Clone the repository:**
+
     ```sh
     git clone https://github.com/your-username/eshara.git
     cd eshara
     ```
 
 2.  **Install dependencies:**
+
     ```sh
     flutter pub get
     ```
@@ -122,6 +125,15 @@ Follow these instructions to get the project up and running on your local machin
     ```sh
     flutter run
     ```
+
+## 📚 Project Documentation
+
+For a deeper understanding of the project's implementation, architecture, and conventions, please refer to our detailed documentation:
+
+- **Architecture Overview**: A detailed guide to the Clean Architecture principles, folder structure, and data flow within the app.
+- **State Management Strategy**: Explains our use of the BLoC pattern for managing state.
+- **API Integration Guide**: Details on how the app communicates with the backend.
+- **Contribution Guidelines**: How to contribute to the project, coding standards, and pull request process.
 
 ## 🌍 Localization
 

@@ -1,11 +1,11 @@
 import 'package:eshara/Core/Helper/theme.dart';
 import 'package:flutter/material.dart';
 
-/// [Widget] — TextInputCard
-/// الـ card اللي فيها الـ TextField اللي المستخدم يكتب فيها النص
-/// [controller]    — الـ TextEditingController
-/// [onChanged]     — callback لما النص يتغير (لتحديث الـ char count)
-/// [maxLength]     — الحد الأقصى للحروف (200)
+/// A card containing a [TextField] for user input.
+///
+/// This widget is used on the Text-to-Sign screen to allow users to enter
+/// the text they want to translate. It includes a character counter and a
+/// copy-to-clipboard button.
 class TextInputCard extends StatelessWidget {
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
@@ -45,7 +45,9 @@ class TextInputCard extends StatelessWidget {
             maxLength: maxLength,
             textAlign: TextAlign.right,
             textDirection: TextDirection.rtl,
-            buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
+            buildCounter:
+                (_, {required currentLength, required isFocused, maxLength}) =>
+                    null,
             style: tt.bodyLarge!.copyWith(color: EsharaTheme.textPrimary),
             decoration: InputDecoration(
               hintText: 'اكتب النص هنا...',
