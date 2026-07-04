@@ -1,45 +1,60 @@
 import 'package:dio/dio.dart';
-import 'package:eshara/features/Authentication/Domain/usecases/verify_otp_usecase.dart';
-import 'package:eshara/features/admin/Data/datasources/admin_remote_datasource.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:eshara/features/admin/Data/repositories/admin_repo_impl.dart';
-import 'package:eshara/features/admin/Domain/repositorys/admin_repository.dart';
-import 'package:eshara/features/admin/domain/usecases/admin_usecases.dart';
-import 'package:eshara/features/addword/Data/datasources/add_word_remote_datasource.dart';
-import 'package:eshara/features/addword/Data/repositories/add_word_repository_impl.dart';
-import 'package:eshara/features/addword/Domain/repositories/add_word_repository.dart';
-import 'package:eshara/features/addword/Domain/usecases/submit_word_request_usecase.dart';
-import 'package:eshara/features/Dictionary/Data/datasources/dictionary_remote_datasource.dart';
-import 'package:eshara/features/Dictionary/Data/repositories/dictionary_repo_impl.dart';
-import 'package:eshara/features/Dictionary/Domin/repositories/dictionary_repository.dart';
-import 'package:eshara/features/Dictionary/Domin/usecases/get_signs_usecase.dart';
-import 'package:eshara/features/Dictionary/Domin/usecases/search_signs_usecase.dart';
-import 'package:eshara/features/Dictionary/Ui/bloc/dictionary_bloc.dart';
-import 'package:eshara/features/Profile/Data/datasources/profile_remote_datasource.dart';
-import 'package:eshara/features/Profile/Data/repositories/profile_repo_impl.dart';
-import 'package:eshara/features/Profile/Domin/repositories/profile_repository.dart';
-import 'package:eshara/features/Profile/Domin/usecases/profile_usecases.dart';
-import 'package:eshara/features/Profile/Ui/bloc/profile_bloc.dart';
-import 'package:eshara/features/SignToText/Data/datasources/sign_remote_datasource.dart';
-import 'package:eshara/features/SignToText/Data/repositories/sign_repo_impl.dart';
-import 'package:eshara/features/SignToText/Domain/repositories/sign_repository.dart';
+import 'package:http/http.dart' as http;
+import 'package:get_it/get_it.dart';
 
-import 'package:eshara/features/SignToText/Domain/usecases/translate_sign.dart';
-import 'package:eshara/features/SignToText/UI/bloc/sign_bloc.dart';
+// Authentication
 import 'package:eshara/features/Authentication/Data/datasources/auth_remote_datasource.dart';
 import 'package:eshara/features/Authentication/Data/repositories/auth_repo_impl.dart';
 import 'package:eshara/features/Authentication/Domain/repositories/auth_repository.dart';
 import 'package:eshara/features/Authentication/Domain/usecases/login_usecase.dart';
 import 'package:eshara/features/Authentication/Domain/usecases/register_usecase.dart';
 import 'package:eshara/features/Authentication/Domain/usecases/resend_otp_usecase.dart';
-
-import 'package:eshara/features/admin/UI/bloc/admin_bloc.dart';
-import 'package:eshara/features/addword/UI/bloc/add_word_bloc.dart';
+import 'package:eshara/features/Authentication/Domain/usecases/verify_otp_usecase.dart';
 import 'package:eshara/features/Authentication/UI/bloc/auth_bloc.dart';
-import 'package:get_it/get_it.dart';
+
+// Add Word
+import 'package:eshara/features/addword/Data/datasources/add_word_remote_datasource.dart';
+import 'package:eshara/features/addword/Data/repositories/add_word_repository_impl.dart';
+import 'package:eshara/features/addword/Domain/repositories/add_word_repository.dart';
+import 'package:eshara/features/addword/Domain/usecases/submit_word_request_usecase.dart';
+import 'package:eshara/features/addword/UI/bloc/add_word_bloc.dart';
+
+// Dictionary
+import 'package:eshara/features/Dictionary/Data/datasources/dictionary_remote_datasource.dart';
+import 'package:eshara/features/Dictionary/Data/repositories/dictionary_repo_impl.dart';
+import 'package:eshara/features/Dictionary/Domain/repositories/dictionary_repository.dart';
+import 'package:eshara/features/Dictionary/Domain/usecases/get_signs_usecase.dart';
+import 'package:eshara/features/Dictionary/Domain/usecases/search_signs_usecase.dart';
+import 'package:eshara/features/Dictionary/Ui/bloc/dictionary_bloc.dart';
+
+// Profile
+import 'package:eshara/features/Profile/Data/datasources/profile_remote_datasource.dart';
+import 'package:eshara/features/Profile/Data/repositories/profile_repo_impl.dart';
+import 'package:eshara/features/Profile/Domain/repositories/profile_repository.dart';
+import 'package:eshara/features/Profile/Domain/usecases/profile_usecases.dart';
+import 'package:eshara/features/Profile/Ui/bloc/profile_bloc.dart';
+
+// SignToText
+import 'package:eshara/features/SignToText/Data/datasources/sign_remote_datasource.dart';
+import 'package:eshara/features/SignToText/Data/repositories/sign_repo_impl.dart';
+import 'package:eshara/features/SignToText/Domain/repositories/sign_repository.dart';
+import 'package:eshara/features/SignToText/Domain/usecases/translate_sign.dart';
+import 'package:eshara/features/SignToText/UI/bloc/sign_bloc.dart';
+
+// TextToSign
+import 'package:eshara/features/Text_to_sign/Data/datasources/text_to_sign_datasource.dart';
+import 'package:eshara/features/Text_to_sign/Data/repositories/text_to_sign_repo_impl.dart';
+import 'package:eshara/features/Text_to_sign/domain/repositories/text_to_sign_repository.dart';
 import 'package:eshara/features/Text_to_sign/domain/usecases/convert_text_to_sign.dart';
 import 'package:eshara/features/Text_to_sign/Ui/bloc/text_to_sign_bloc.dart';
-import 'package:http/http.dart' as http;
+
+// Admin
+import 'package:eshara/features/admin/Data/datasources/admin_remote_datasource.dart';
+import 'package:eshara/features/admin/Data/repositories/admin_repo_impl.dart';
+import 'package:eshara/features/admin/Domain/repositories/admin_repository.dart';
+import 'package:eshara/features/admin/domain/usecases/admin_usecases.dart';
+import 'package:eshara/features/admin/UI/bloc/admin_bloc.dart';
 
 final sl = GetIt.instance;
 bool _dependenciesInitialized = false;
@@ -85,7 +100,7 @@ Future<void> initDependencies() async {
   // ── Sign To Text ───────────────────────────────────────────────────────────
   // ── Data Sources ───────────────────────────────────────────────────────────
   sl.registerLazySingleton<SignRemoteDataSource>(
-    () => SignRemoteDataSourceImpl(client: sl()),
+    () => SignRemoteDataSourceImpl(client: sl(), dio: sl()),
   );
 
   // ── Repositories ───────────────────────────────────────────────────────────
@@ -105,21 +120,17 @@ Future<void> initDependencies() async {
 
   // ── Profile ─────────────────────────────────────────────────────────────
   sl.registerLazySingleton<ProfileRemoteDataSource>(
-    () => ProfileRemoteDataSourceImpl(),
+    () => ProfileRemoteDataSourceImpl(dio: sl()),
   );
   sl.registerLazySingleton<ProfileRepository>(_createProfileRepo);
-  sl.registerLazySingleton(() => GetUserUseCase(sl<ProfileRepository>()));
-  sl.registerLazySingleton(() => UpdateUserUseCase(sl<ProfileRepository>()));
+  sl.registerLazySingleton(() => GetProfileUseCase(sl<ProfileRepository>()));
+  sl.registerLazySingleton(() => UpdateProfileUseCase(sl<ProfileRepository>()));
   sl.registerLazySingleton(() => LogoutUseCase(sl<ProfileRepository>()));
-  sl.registerLazySingleton(
-    () => ToggleNotificationsUseCase(sl<ProfileRepository>()),
-  );
   sl.registerFactory<ProfileBloc>(
     () => ProfileBloc(
-      getUserUseCase: sl(),
-      updateUserUseCase: sl(),
       logoutUseCase: sl(),
-      toggleNotificationsUseCase: sl(),
+      getProfileUseCase: sl(),
+      updateProfileUseCase: sl(),
     ),
   );
 
@@ -183,11 +194,20 @@ Future<void> initDependencies() async {
 
   // ── Text To Sign ───────────────────────────────────────────────────────────
 
-  // 1. تسجيل الـ UseCase الخاص بـ Text To Sign
-  // (استخدمنا النسخة المؤقتة بدون Repository لتشغيل التطبيق وتخطي الخطأ)
-  sl.registerLazySingleton(() => ConvertTextToSignUseCase());
+  // 1. Data Sources
+  sl.registerLazySingleton<TextToSignRemoteDataSource>(
+    () => TextToSignRemoteDataSourceImpl(dio: sl()),
+  );
 
-  // 2. استخدام sl() بدلاً من null حتى يقوم GetIt بالبحث عن الـ UseCase وحقنه بنجاح
+  // 2. Repositories
+  sl.registerLazySingleton<TextToSignRepository>(
+    () => TextToSignRepositoryImpl(remoteDataSource: sl()),
+  );
+
+  // 3. Use Cases
+  sl.registerLazySingleton(() => ConvertTextToSignUseCase(sl()));
+
+  // 4. BLoC
   sl.registerFactory(() => TextToSignBloc(convertTextToSignUseCase: sl()));
 
   // ── Admin ──────────────────────────────────────────────────────────────
@@ -203,7 +223,7 @@ Future<void> initDependencies() async {
   );
 
   // 3. Use Cases
-  sl.registerLazySingleton(() => GetStatsUseCase(sl()));
+  //sl.registerLazySingleton(() => GetStatsUseCase(sl()));
   sl.registerLazySingleton(() => GetWordsUseCase(sl()));
   sl.registerLazySingleton(() => AddWordUseCase(sl()));
   sl.registerLazySingleton(() => UpdateWordUseCase(sl()));
@@ -219,7 +239,7 @@ Future<void> initDependencies() async {
   // 4. BLoC
   sl.registerFactory<AdminBloc>(
     () => AdminBloc(
-      getStats: sl(),
+      //getStats: sl(),
       getWords: sl(),
       addWord: sl(),
       updateWord: sl(),

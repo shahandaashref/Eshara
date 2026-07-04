@@ -26,6 +26,12 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     context.read<AdminBloc>().add(LoadDashboardEvent());
   }
 
+  void _reloadData() {
+    if (mounted) {
+      context.read<AdminBloc>().add(LoadDashboardEvent());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
@@ -57,6 +63,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   if (state is AdminDashboardState) {
                     return _buildDashboard(context, tt, state);
                   }
+                  // This handles showing the updated dashboard after an action
                   if (state is AdminActionSuccessState &&
                       state.previousState is AdminDashboardState) {
                     return _buildDashboard(
@@ -74,13 +81,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                       ),
                     );
                   }
-                  return Center(
-                    child: Text(
-                      'جاري إعادة تحميل لوحة التحكم...',
-                      style: tt.bodyLarge,
-                      textAlign: TextAlign.center,
-                    ),
-                  );
+                  // حالة افتراضية في حالة عدم تطابق أي من الحالات السابقة
+                  return const SizedBox.shrink();
                 },
               ),
             ),
@@ -137,59 +139,50 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               _QuickActionRow(
                 label: 'إضافة فئة جديدة',
                 icon: Icons.create_new_folder_rounded,
-                onTap: () {
-                  final adminBloc = context.read<AdminBloc>();
-                  Navigator.push(
+                onTap: () async {
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) => BlocProvider.value(
-                        value: adminBloc,
+                        value: context.read<AdminBloc>(),
                         child: const AdminCategoriesPage(),
                       ),
                     ),
-                  ).then((_) {
-                    if (!mounted) return;
-                    adminBloc.add(LoadDashboardEvent());
-                  });
+                  );
+                  _reloadData();
                 },
               ),
               _QuickActionRow(
                 label: 'إضافة كلمة جديدة',
                 icon: Icons.add_box_rounded,
-                onTap: () {
-                  final adminBloc = context.read<AdminBloc>();
-                  Navigator.push(
+                onTap: () async {
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) => BlocProvider.value(
-                        value: adminBloc,
+                        value: context.read<AdminBloc>(),
                         child: const AdminWordsPage(),
                       ),
                     ),
-                  ).then((_) {
-                    if (!mounted) return;
-                    adminBloc.add(LoadDashboardEvent());
-                  });
+                  );
+                  _reloadData();
                 },
               ),
               _QuickActionRow(
                 label: 'طلبات الكلمات',
                 icon: Icons.mark_email_unread_rounded,
                 badgeCount: state.stats.pendingRequests,
-                onTap: () {
-                  final adminBloc = context.read<AdminBloc>();
-                  Navigator.push(
+                onTap: () async {
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) => BlocProvider.value(
-                        value: adminBloc,
+                        value: context.read<AdminBloc>(),
                         child: const AdminRequestsPage(),
                       ),
                     ),
-                  ).then((_) {
-                    if (!mounted) return;
-                    adminBloc.add(LoadDashboardEvent());
-                  });
+                  );
+                  _reloadData();
                 },
               ),
             ],
@@ -199,13 +192,17 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
           // ── الفئات الطارئة ────────────────────────────────────────────
           Text(
-            'الفئات الطارئة',
+            'الفئات الحالية',
             style: tt.titleLarge!.copyWith(color: EsharaTheme.textPrimary),
           ),
           const SizedBox(height: 10),
-          _CategoryStatRow(label: 'طبية', count: 15),
-          _CategoryStatRow(label: 'تعليم', count: 20),
-          _CategoryStatRow(label: 'عائلة', count: 8),
+          // عرض الفئات الفعلية القادمة من الـ API
+          ...state.categories
+              .take(5) // نعرض أول 5 فئات فقط كمثال
+              .map(
+                (cat) =>
+                    _CategoryStatRow(label: cat.name, count: cat.wordCount!),
+              ),
 
           const SizedBox(height: 20),
 

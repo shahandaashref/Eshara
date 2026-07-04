@@ -9,7 +9,8 @@ abstract class AdminRemoteDataSource {
   Future<void> updateWord(AdminWord word);
   Future<void> deleteWord(String wordId);
   Future<List<AdminCategory>> getCategories();
-  Future<AdminCategory> addCategory(String name);
+  Future<AdminCategory> addCategory(String name, String? description);
+  Future<void> updateCategory(AdminCategory category);
   Future<void> deleteCategory(String categoryId);
   Future<List<WordRequest>> getWordRequests();
   Future<void> acceptRequest(String requestId);
@@ -46,6 +47,8 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
     return response;
   }
 
+  Options _allowAnyStatus() => Options(validateStatus: (_) => true);
+
   List<dynamic> _normalizeList(dynamic data) {
     if (data == null) return [];
     if (data is List) return data;
@@ -55,24 +58,32 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
     return [data];
   }
 
+  List<Map<String, dynamic>> _toJsonList(dynamic data) {
+    final items = _normalizeList(data);
+    return items
+        .whereType<Map>()
+        .map((item) => Map<String, dynamic>.from(item))
+        .toList();
+  }
+
   @override
   Future<List<AdminWord>> getWords({String? categoryId}) async {
     try {
-      final response = await dio.get('/api/admin/get-all-words');
+      final response = await dio.get(
+        '/api/admin/get-all-words',
+        queryParameters: {
+          if (categoryId != null && categoryId.isNotEmpty)
+            'categoryId': categoryId,
+        },
+      );
       final data = _unwrapResponse(response.data);
       final items = _normalizeList(data);
-      final words = items
+      return items
           .map(
             (item) =>
                 AdminWord.fromJson(Map<String, dynamic>.from(item as Map)),
           )
           .toList();
-
-      if (categoryId == null || categoryId.isEmpty) {
-        return words;
-      }
-
-      return words.where((word) => word.categoryId == categoryId).toList();
     } on DioException catch (e) {
       throw Exception('فشل تحميل الكلمات: ${e.message}');
     }
@@ -138,43 +149,101 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
   @override
   Future<List<AdminCategory>> getCategories() async {
     try {
-      final response = await dio.get('/api/admin/get-all-categories');
-      final data = _unwrapResponse(response.data);
-      final items = _normalizeList(data);
-      final categories = items
+      // 1. جلب كل الفئات وكل الكلمات في طلبات متوازية لتحسين الأداء
+      final responses = await Future.wait([
+        dio.get('/api/categories'),
+        dio.get(
+          '/api/admin/get-all-words',
+          queryParameters: {'includeInactive': true},
+        ),
+      ]);
+
+      // 2. معالجة استجابة الفئات
+      final categoriesResponse = responses[0];
+      final categoriesData = _unwrapResponse(categoriesResponse.data);
+      final categoryItems = _normalizeList(categoriesData);
+      final categories = categoryItems
           .map(
             (item) =>
                 AdminCategory.fromJson(Map<String, dynamic>.from(item as Map)),
           )
           .toList();
 
-      return categories;
+      // 3. معالجة استجابة الكلمات وحساب عددها لكل فئة
+      final wordsResponse = responses[1];
+      final wordsData = _unwrapResponse(wordsResponse.data);
+      final wordItems = _normalizeList(wordsData);
+      final words = wordItems
+          .map(
+            (item) =>
+                AdminWord.fromJson(Map<String, dynamic>.from(item as Map)),
+          )
+          .toList();
+
+      final wordCounts = <String, int>{};
+      for (final word in words) {
+        // التأكد من أن categoryId ليس null قبل استخدامه
+        if (word.categoryId != null && word.categoryId!.isNotEmpty) {
+          wordCounts.update(
+            word.categoryId!,
+            (value) => value + 1,
+            ifAbsent: () => 1,
+          );
+        }
+      }
+
+      // 4. تحديث كل فئة بعدد الكلمات الصحيح
+      return categories
+          .map((cat) => cat.copyWith(wordCount: wordCounts[cat.id] ?? 0))
+          .toList();
     } on DioException catch (e) {
       throw Exception('فشل تحميل الفئات: ${e.message}');
     }
   }
 
   @override
-  Future<AdminCategory> addCategory(String name) async {
+  Future<AdminCategory> addCategory(String name, String? description) async {
     try {
       final response = await dio.post(
-        '/api/admin/categories',
-        data: {
-          'name': name,
-          'description': 'Default description' /* API requires description */,
-        },
+        '/api/admin/categories', // Endpoint صحيح حسب التوثيق
+        data: {'name': name, 'description': description ?? ''},
       );
       final data = _unwrapResponse(response.data);
+      // إذا كانت الاستجابة تحتوي على بيانات الفئة الجديدة، قم بتحويلها
       if (data is Map<String, dynamic>) {
-        return AdminCategory.fromJson(data);
+        // نقوم بإضافة wordCount: 0 بشكل يدوي لضمان التوافقية
+        return AdminCategory.fromJson({...data, 'wordCount': 0});
       }
-      return AdminCategory(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        name: name,
-        wordCount: 0,
+      // إذا لم ترجع الاستجابة بيانات الفئة، فهذا يعتبر خطأ
+      throw Exception(
+        'فشل إضافة الفئة: لم يتم استلام بيانات الفئة الجديدة من الخادم.',
       );
     } on DioException catch (e) {
-      throw Exception('فشل إضافة الفئة: ${e.message}');
+      // محاولة استخراج رسالة خطأ واضحة من الـ API
+      final errorData = e.response?.data;
+      if (errorData is Map<String, dynamic> &&
+          errorData.containsKey('message')) {
+        throw Exception('فشل إضافة الفئة: ${errorData['message']}');
+      }
+      throw Exception('فشل إضافة الفئة: ${e.message ?? 'خطأ غير معروف'}');
+    }
+  }
+
+  @override
+  Future<void> updateCategory(AdminCategory category) async {
+    try {
+      await dio.put(
+        '/api/admin/categories/${category.id}',
+        data: {
+          'name': category.name,
+          'description': category.description,
+          'isActive':
+              true, // Assuming we always want to keep it active on update
+        },
+      );
+    } on DioException catch (e) {
+      // You can parse the error from e.response.data if needed
+      throw Exception('فشل تعديل الفئة: ${e.message}');
     }
   }
 
@@ -191,8 +260,17 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
 
   @override
   Future<List<WordRequest>> getWordRequests() async {
+    // حسب التوثيق، يمكننا التحكم في الطلبات التي يتم جلبها
+    // هنا سنجلب الطلبات المعلقة فقط بشكل افتراضي
     try {
-      final response = await dio.get('/api/admin/word-requests');
+      final response = await dio.get(
+        '/api/admin/word-requests',
+        queryParameters: {
+          'includePending': true,
+          'includeApproved': false,
+          'includeRejected': false,
+        },
+      );
       final data = _unwrapResponse(response.data);
       final items = _normalizeList(data);
       return items
@@ -209,15 +287,16 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
   @override
   Future<void> acceptRequest(String requestId) async {
     try {
-      // API requires a body, sending empty values for now.
-      // This should be updated to send actual data from the UI.
+      // ملاحظة: الـ API يتطلب body. حالياً يتم إرسال قيم افتراضية.
+      // يجب تحديث هذه الدالة لاحقاً لتمرير البيانات من الواجهة الرسومية.
       await dio.put(
         '/api/admin/word-requests/$requestId/approve',
         data: {
           "adminComment": "Approved",
-          "gloss": "",
-          "description": "",
-          "categoryId": "",
+          "gloss": "Default Gloss", // قيمة افتراضية مؤقتة
+          "description": "Default Description", // قيمة افتراضية مؤقتة
+          "categoryId":
+              "00000000-0000-0000-0000-000000000000", // UUID افتراضي مؤقت
         },
       );
     } on DioException catch (e) {
@@ -228,15 +307,10 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
   @override
   Future<void> rejectRequest(String requestId) async {
     try {
-      // API requires a body, sending a comment.
+      // ملاحظة: الـ API يتطلب body. حالياً يتم إرسال قيم افتراضية.
       await dio.put(
         '/api/admin/word-requests/$requestId/reject',
-        data: {
-          "adminComment": "Rejected",
-          "gloss": "",
-          "description": "",
-          "categoryId": "",
-        },
+        data: {"adminComment": "Rejected"},
       );
     } on DioException catch (e) {
       throw Exception('فشل رفض الطلب: ${e.message}');
@@ -246,7 +320,9 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
   @override
   Future<dynamic> getUsers() async {
     try {
-      final response = await dio.get('/api/admin/users');
+      final response = await dio.get(
+        '/api/admin/get-all-users',
+      ); // تم تعديل الـ Endpoint
       final data = _unwrapResponse(response.data);
       if (data is List) return data;
       if (data is Map<String, dynamic> && data.containsKey('items')) {

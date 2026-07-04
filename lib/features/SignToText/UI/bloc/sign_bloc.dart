@@ -24,37 +24,46 @@ class SignBloc extends Bloc<SignEvent, SignState> {
   ) async {
     // الخطوات الثلاثة اللي في الـ UI
     final steps = [
-      const ProcessingStep(label: 'تحليل بنية الإشارة', status: StepStatus.pending),
-      const ProcessingStep(label: 'تحويل إلى Gloss إلى نص', status: StepStatus.pending),
+      const ProcessingStep(
+        label: 'تحليل بنية الإشارة',
+        status: StepStatus.pending,
+      ),
+      const ProcessingStep(
+        label: 'تحويل إلى Gloss إلى نص',
+        status: StepStatus.pending,
+      ),
       const ProcessingStep(label: 'إنشاء النص', status: StepStatus.pending),
     ];
 
     // Step 1
-    emit(SignProcessingState(
-      progress: 0.1,
-      steps: _updateStep(steps, 0, StepStatus.inProgress),
-    ));
+    emit(
+      SignProcessingState(
+        progress: 0.1,
+        steps: _updateStep(steps, 0, StepStatus.inProgress),
+      ),
+    );
     await Future.delayed(const Duration(milliseconds: 800));
 
-    emit(SignProcessingState(
-      progress: 0.3,
-      steps: _updateStep(steps, 0, StepStatus.done),
-    ));
+    emit(
+      SignProcessingState(
+        progress: 0.3,
+        steps: _updateStep(steps, 0, StepStatus.done),
+      ),
+    );
     await Future.delayed(const Duration(milliseconds: 400));
 
     // Step 2
     final steps2 = _updateStep(steps, 0, StepStatus.done);
-    emit(SignProcessingState(
-      progress: 0.45,
-      steps: _updateStep(steps2, 1, StepStatus.inProgress),
-    ));
+    emit(
+      SignProcessingState(
+        progress: 0.45,
+        steps: _updateStep(steps2, 1, StepStatus.inProgress),
+      ),
+    );
     await Future.delayed(const Duration(milliseconds: 800));
 
     final steps3 = _updateStep(steps2, 1, StepStatus.done);
-    emit(SignProcessingState(
-      progress: 0.7,
-      steps: steps3,
-    ));
+    emit(SignProcessingState(progress: 0.7, steps: steps3));
     await Future.delayed(const Duration(milliseconds: 400));
 
     // Step 3
@@ -63,12 +72,14 @@ class SignBloc extends Bloc<SignEvent, SignState> {
     await Future.delayed(const Duration(milliseconds: 800));
 
     // Call use case
-    try {
-      final translation = await translateSignUseCase(event.videoPath);
-      emit(SignResultState(translation: translation));
-    } catch (e) {
-      emit(SignErrorState(message: 'حدث خطأ أثناء الترجمة، حاول مرة أخرى'));
-    }
+    final result = await translateSignUseCase(event.videoPath);
+
+    result.fold(
+      // في حالة الفشل (الجانب الأيسر)
+      (failure) => emit(SignErrorState(message: failure.message)),
+      // في حالة النجاح (الجانب الأيمن)
+      (translation) => emit(SignResultState(translation: translation)),
+    );
   }
 
   void _onCancel(CancelRecordingEvent event, Emitter<SignState> emit) {

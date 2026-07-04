@@ -2,7 +2,9 @@ import 'package:eshara/Core/Helper/theme.dart';
 import 'package:eshara/Core/Helper/snackbar_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:eshara/Core/di/dependency_injection.dart';
 import 'package:eshara/Core/di/injection_container.dart';
+
 import '../bloc/text_to_sign_bloc.dart';
 import '../bloc/text_to_sign_state_event.dart';
 import '../widgets/text_input_card.dart';
@@ -61,12 +63,9 @@ class _TextToSignViewState extends State<_TextToSignView> {
               children: [
                 _buildAppBar(context, tt, state),
                 Expanded(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 350),
-                    child: state is TextToSignResultState
-                        ? _buildResultBody(context, state, tt)
-                        : _buildIdleBody(context, tt),
-                  ),
+                  child: state is TextToSignResultState
+                      ? _buildResultBody(context, state, tt)
+                      : _buildIdleBody(context, tt),
                 ),
               ],
             );
@@ -92,54 +91,35 @@ class _TextToSignViewState extends State<_TextToSignView> {
       ),
       child: Row(
         children: [
-          // زرار رجوع فقط للرجوع من النتيجة إلى الإدخال (وليس للخروج من الصفحة)
-          if (state is TextToSignResultState)
-            GestureDetector(
-              onTap: () {
-                context.read<TextToSignBloc>().add(ResetTextToSignEvent());
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: EsharaTheme.surfaceVariant,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.arrow_forward_ios_rounded,
-                      size: 14,
+          // زر الرجوع أو مساحة فارغة للحفاظ على التوسيط
+          SizedBox(
+            width: 40,
+            child: state is TextToSignResultState
+                ? IconButton(
+                    onPressed: () => context.read<TextToSignBloc>().add(
+                      ResetTextToSignEvent(),
+                    ),
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      size: 18,
                       color: EsharaTheme.textPrimary,
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'رجوع',
-                      style: tt.bodyMedium!.copyWith(
-                        color: EsharaTheme.textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          else
-            const SizedBox(width: 70), // للحفاظ على توازن التصميم في المنتصف
+                  )
+                : null,
+          ),
           const Spacer(),
           Text('ترجمة النص', style: tt.headlineLarge),
           const Spacer(),
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: EsharaTheme.surfaceVariant,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(
-              Icons.refresh_rounded,
-              size: 18,
-              color: EsharaTheme.textSecondary,
+          // زر التحديث أو مساحة فارغة
+          SizedBox(
+            width: 40,
+            child: IconButton(
+              onPressed: () => _onReset(context),
+              icon: const Icon(
+                Icons.refresh_rounded,
+                size: 22,
+                color: EsharaTheme.textSecondary,
+              ),
             ),
           ),
         ],
@@ -305,10 +285,6 @@ class _TextToSignViewState extends State<_TextToSignView> {
           // ── Video Player ──────────────────────────────────────────────
           SignVideoPlayer(
             signVideo: state.signVideo,
-            isPlaying: state.isPlaying,
-            onPlayPause: () {
-              // TODO: toggle video playback
-            },
             onDownload: () {
               context.read<TextToSignBloc>().add(
                 DownloadVideoEvent(videoUrl: state.signVideo.videoUrl),
@@ -329,5 +305,12 @@ class _TextToSignViewState extends State<_TextToSignView> {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
     context.read<TextToSignBloc>().add(ConvertTextEvent(text: text));
+  }
+
+  /// [_onReset] — بيمسح النص وبيرجع للحالة الأولية
+  void _onReset(BuildContext context) {
+    _textController.clear();
+    context.read<TextToSignBloc>().add(ResetTextToSignEvent());
+    setState(() {}); // لإعادة بناء الواجهة وتحديث حالة الزر
   }
 }

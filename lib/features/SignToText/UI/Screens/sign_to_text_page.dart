@@ -6,7 +6,9 @@ import 'package:eshara/Core/Helper/theme.dart';
 import 'package:eshara/Core/Helper/snackbar_helper.dart';
 import 'package:eshara/Core/Widgets/app_bar.dart';
 import 'package:video_player/video_player.dart';
+import 'package:eshara/Core/di/dependency_injection.dart';
 import 'package:eshara/Core/di/injection_container.dart';
+
 import 'package:eshara/features/SignToText/UI/Widget/camera_preview_widget.dart';
 import 'package:eshara/features/SignToText/UI/Widget/processing_indicator.dart';
 import 'package:eshara/features/SignToText/UI/Widget/translation_result_card.dart';

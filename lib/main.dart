@@ -1,17 +1,14 @@
+import 'package:eshara/Core/di/dependency_injection.dart';
 import 'package:eshara/Core/di/injection_container.dart';
 import 'package:eshara/my_app.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
-Future<void> main() async {
+void main() async {
+  // تأكد من تهيئة Flutter Widgets قبل أي شيء آخر
   WidgetsFlutterBinding.ensureInitialized();
-  //await init();
+
+  // قم بتهيئة جميع الاعتماديات وانتظر حتى تكتمل
   await initDependencies();
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-    ),
-  );
+
   runApp(const MyApp());
 }

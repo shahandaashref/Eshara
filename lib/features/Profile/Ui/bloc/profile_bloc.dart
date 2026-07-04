@@ -1,85 +1,56 @@
-import 'package:eshara/features/Profile/Domin/usecases/profile_usecases.dart';
+import 'package:eshara/features/Profile/Domain/usecases/profile_usecases.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'profile_event.dart';
-import 'profile_state.dart';
+import 'package:eshara/features/Profile/Ui/bloc/profile_event.dart';
+import 'package:eshara/features/Profile/Ui/bloc/profile_state.dart';
 
-/// [BLoC] — ProfileBloc
-/// بيدير كل states الـ profile feature:
-/// loading → loaded → updating → updated / error
 class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
-  final GetUserUseCase getUserUseCase;
-  final UpdateUserUseCase updateUserUseCase;
+  final GetProfileUseCase getProfileUseCase;
+  final UpdateProfileUseCase updateProfileUseCase;
   final LogoutUseCase logoutUseCase;
-  final ToggleNotificationsUseCase toggleNotificationsUseCase;
 
   ProfileBloc({
-    required this.getUserUseCase,
-    required this.updateUserUseCase,
+    required this.getProfileUseCase,
+    required this.updateProfileUseCase,
     required this.logoutUseCase,
-    required this.toggleNotificationsUseCase,
-  }) : super(ProfileLoadingState()) {
-    on<LoadProfileEvent>(_onLoad);
-    on<UpdateProfileEvent>(_onUpdate);
+  }) : super(ProfileInitial()) {
+    on<LoadProfileEvent>(_onLoadProfile);
+    on<UpdateProfileEvent>(_onUpdateProfile);
     on<LogoutEvent>(_onLogout);
-    on<ToggleNotificationsEvent>(_onToggleNotifications);
   }
 
-  /// [_onLoad] — بيجيب بيانات المستخدم لما الصفحة تفتح
-  Future<void> _onLoad(LoadProfileEvent event, Emitter<ProfileState> emit) async {
-    emit(ProfileLoadingState());
+  Future<void> _onLoadProfile(
+    LoadProfileEvent event,
+    Emitter<ProfileState> emit,
+  ) async {
+    emit(ProfileLoading()); // تم تصحيح الحالة
     try {
-      final user = await getUserUseCase();
-      emit(ProfileLoadedState(user: user));
+      final profile = await getProfileUseCase();
+      emit(ProfileLoaded(profile));
     } catch (e) {
-      emit(ProfileErrorState(message: 'تعذر تحميل البيانات، حاول مرة أخرى'));
+      emit(ProfileError(e.toString().replaceAll('Exception: ', '')));
     }
   }
 
-  /// [_onUpdate] — بيحفظ التعديلات الجديدة على بيانات المستخدم
-  Future<void> _onUpdate(UpdateProfileEvent event, Emitter<ProfileState> emit) async {
-    emit(ProfileUpdatingState(user: event.user));
+  Future<void> _onUpdateProfile(
+    UpdateProfileEvent event,
+    Emitter<ProfileState> emit,
+  ) async {
+    emit(ProfileUpdating());
     try {
-      final updated = await updateUserUseCase(event.user);
-      emit(ProfileUpdatedState(user: updated));
+      await updateProfileUseCase(event.profile);
+      emit(ProfileUpdateSuccess());
+      add(LoadProfileEvent()); // إعادة تحميل البيانات بعد التحديث
     } catch (e) {
-      emit(ProfileErrorState(
-        message: 'تعذر حفظ التغييرات، حاول مرة أخرى',
-        user: event.user,
-      ));
+      emit(ProfileError(e.toString().replaceAll('Exception: ', '')));
     }
   }
 
-  /// [_onLogout] — بيعمل تسجيل خروج ويحول الـ state لـ LoggedOut
   Future<void> _onLogout(LogoutEvent event, Emitter<ProfileState> emit) async {
     try {
       await logoutUseCase();
       emit(ProfileLoggedOutState());
     } catch (e) {
-      emit(ProfileErrorState(message: 'تعذر تسجيل الخروج، حاول مرة أخرى'));
-    }
-  }
-
-  /// [_onToggleNotifications] — بيحدث حالة الإشعارات ويـ emit الـ state الجديدة
-  Future<void> _onToggleNotifications(
-    ToggleNotificationsEvent event,
-    Emitter<ProfileState> emit,
-  ) async {
-    // بناخد الـ user الحالي من الـ state لو موجود
-    final currentUser = switch (state) {
-      ProfileLoadedState s  => s.user,
-      ProfileUpdatedState s => s.user,
-      _                     => null,
-    };
-    if (currentUser == null) return;
-
-    try {
-      await toggleNotificationsUseCase(event.enabled);
-      emit(ProfileLoadedState(
-        user: currentUser.copyWith(notificationsEnabled: event.enabled),
-      ));
-    } catch (e) {
-      // لو فشل نرجع الـ toggle للحالة الأصلية
-      emit(ProfileLoadedState(user: currentUser));
+      emit(ProfileError(e.toString().replaceAll('Exception: ', '')));
     }
   }
 }

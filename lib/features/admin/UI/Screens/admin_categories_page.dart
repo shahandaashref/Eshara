@@ -1,4 +1,5 @@
 import 'package:eshara/Core/Helper/theme.dart';
+import 'package:eshara/Core/Helper/snackbar_helper.dart';
 import 'package:eshara/Core/Widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -56,11 +57,13 @@ class _AdminCategoriesPageState extends State<AdminCategoriesPage> {
       body: BlocConsumer<AdminBloc, AdminState>(
         listener: (context, state) {
           if (state is AdminActionSuccessState) {
-            ScaffoldMessenger.of(
+            SnackbarHelper.showCustomSnackBar(context, state.message);
+          } else if (state is AdminErrorState) {
+            SnackbarHelper.showCustomSnackBar(
               context,
-            ).showSnackBar(SnackBar(content: Text(state.message)));
-            // إعادة تحميل الفئات بعد أي إجراء ناجح (إضافة/حذف)
-            context.read<AdminBloc>().add(LoadCategoriesEvent());
+              state.message,
+              isError: true,
+            );
           }
         },
         builder: (context, state) {
@@ -70,70 +73,76 @@ class _AdminCategoriesPageState extends State<AdminCategoriesPage> {
             );
           }
           if (state is AdminCategoriesState) {
-            return ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: state.categories.length,
-              itemBuilder: (_, i) {
-                final cat = state.categories[i];
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: EsharaTheme.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: EsharaTheme.border),
-                  ),
-                  child: Row(
-                    children: [
-                      // حذف الفئة
-                      GestureDetector(
-                        onTap: () =>
-                            _showDeleteSheet(context, cat.id, cat.name),
-                        child: Container(
-                          padding: const EdgeInsets.all(7),
+            return RefreshIndicator(
+              onRefresh: () async {
+                context.read<AdminBloc>().add(LoadCategoriesEvent());
+              },
+              color: EsharaTheme.primaryBlue,
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: state.categories.length,
+                itemBuilder: (_, i) {
+                  final cat = state.categories[i];
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: EsharaTheme.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: EsharaTheme.border),
+                    ),
+                    child: Row(
+                      children: [
+                        // حذف الفئة
+                        GestureDetector(
+                          onTap: () =>
+                              _showDeleteSheet(context, cat.id, cat.name),
+                          child: Container(
+                            padding: const EdgeInsets.all(7),
+                            decoration: BoxDecoration(
+                              color: EsharaTheme.error.withAlpha(25),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.delete_rounded,
+                              color: EsharaTheme.error,
+                              size: 16,
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
+                        // عدد الكلمات
+                        Text('${cat.wordCount} كلمة', style: tt.bodySmall),
+                        const SizedBox(width: 12),
+                        // اسم الفئة
+                        Text(
+                          cat.name,
+                          style: tt.titleMedium!.copyWith(
+                            color: EsharaTheme.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        // أيقونة الفئة
+                        Container(
+                          padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: EsharaTheme.error.withAlpha(25),
+                            color: EsharaTheme.primaryLight,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(
-                            Icons.delete_rounded,
-                            color: EsharaTheme.error,
-                            size: 16,
+                            Icons.folder_rounded,
+                            color: EsharaTheme.primaryBlue,
+                            size: 18,
                           ),
                         ),
-                      ),
-                      const Spacer(),
-                      // عدد الكلمات
-                      Text('${cat.wordCount} كلمة', style: tt.bodySmall),
-                      const SizedBox(width: 12),
-                      // اسم الفئة
-                      Text(
-                        cat.name,
-                        style: tt.titleMedium!.copyWith(
-                          color: EsharaTheme.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      // أيقونة الفئة
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: EsharaTheme.primaryLight,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.folder_rounded,
-                          color: EsharaTheme.primaryBlue,
-                          size: 18,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
+                      ],
+                    ),
+                  );
+                },
+              ),
             );
           }
           return const SizedBox();
@@ -144,6 +153,7 @@ class _AdminCategoriesPageState extends State<AdminCategoriesPage> {
 
   void _showAddCategorySheet(BuildContext pageContext) {
     final ctrl = TextEditingController();
+    final descCtrl = TextEditingController();
     showModalBottomSheet(
       context: pageContext,
       isScrollControlled: true,
@@ -176,6 +186,12 @@ class _AdminCategoriesPageState extends State<AdminCategoriesPage> {
                 textAlign: TextAlign.right,
                 decoration: const InputDecoration(hintText: 'اسم الفئة'),
               ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: descCtrl,
+                textAlign: TextAlign.right,
+                decoration: const InputDecoration(hintText: 'الوصف (اختياري)'),
+              ),
               const SizedBox(height: 16),
               Row(
                 children: [
@@ -191,7 +207,10 @@ class _AdminCategoriesPageState extends State<AdminCategoriesPage> {
                       onPressed: () {
                         if (ctrl.text.trim().isEmpty) return;
                         pageContext.read<AdminBloc>().add(
-                          AddCategoryEvent(name: ctrl.text.trim()),
+                          AddCategoryEvent(
+                            name: ctrl.text.trim(),
+                            description: descCtrl.text.trim(),
+                          ),
                         );
                         Navigator.pop(pageContext);
                       },
@@ -231,12 +250,14 @@ class _AdminCategoriesPageState extends State<AdminCategoriesPage> {
 class ConfirmDeleteSheet extends StatelessWidget {
   final String title;
   final String subtitle;
+  final String confirmText;
   final VoidCallback onConfirm;
 
   const ConfirmDeleteSheet({
     super.key,
     required this.title,
     required this.subtitle,
+    this.confirmText = 'نعم، قم بالحذف',
     required this.onConfirm,
   });
 
@@ -270,7 +291,7 @@ class ConfirmDeleteSheet extends StatelessWidget {
                     onConfirm();
                     Navigator.pop(context);
                   },
-                  child: const Text('نعم، قم بالحذف'),
+                  child: Text(confirmText),
                 ),
               ),
             ],

@@ -1,12 +1,8 @@
-import '../entities/translation.dart';
+import 'package:dartz/dartz.dart';
+import 'package:eshara/Core/error/failures.dart';
+import 'package:eshara/features/SignToText/Domain/entities/translation.dart';
 
-/// [Repository Contract] — SignRepository
-/// ده الـ abstract interface اللي بيحدد إيه العمليات المتاحة.
-/// الـ domain layer بتتعامل معاه بس — ومش عارفة أي حاجة عن الـ implementation.
-/// الـ implementation الحقيقية موجودة في data/repositories/sign_repo_impl.dart
-abstract interface class SignRepository {
-
-  /// بتاخد [videoPath] مسار الفيديو المسجل
-  /// وبترجع [Translation] فيها النص المترجم
-  Future<Translation> translateSign(String videoPath);
+abstract class SignRepository {
+  /// يترجم فيديو الإشارة إلى نص. يُرجع إما [Failure] أو [Translation].
+  Future<Either<Failure, Translation>> translateSign(String videoPath);
 }

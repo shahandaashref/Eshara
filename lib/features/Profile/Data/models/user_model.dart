@@ -1,4 +1,4 @@
-import 'package:eshara/features/Profile/Domin/entities/user.dart';
+import 'package:eshara/features/Profile/Domain/entities/user.dart';
 
 
 /// [Model] — UserModel
@@ -6,7 +6,7 @@ import 'package:eshara/features/Profile/Domin/entities/user.dart';
 class UserModel extends User {
   UserModel({
     required super.id,
-    required super.name,
+    required super.fullName,
     required super.email,
     super.avatarUrl,
     super.notificationsEnabled,
@@ -16,7 +16,7 @@ class UserModel extends User {
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id: json['id'] as String,
-      name: json['name'] as String,
+      fullName: json['fullName'] as String,
       email: json['email'] as String,
       avatarUrl: json['avatar_url'] as String?,
       notificationsEnabled: json['notifications_enabled'] as bool? ?? true,
@@ -26,7 +26,7 @@ class UserModel extends User {
   /// [toJson] — بيحول الـ UserModel لـ Map يتبعت للـ API
   Map<String, dynamic> toJson() => {
     'id': id,
-    'name': name,
+    'name': fullName,
     'email': email,
     'avatar_url': avatarUrl,
     'notifications_enabled': notificationsEnabled,

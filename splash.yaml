@@ -29,7 +29,7 @@ flutter_native_splash:
 
   # general branding for all platform (except android 12+):
   # allows you to specify an image used as branding in the splash screen. should be png.
-  branding: assets/logo/splashlogo.png
+  # branding: assets/logo/splashlogo.png
   #branding_dark: assets/dart_dark.png
   # platform-specific branding. will override general branding if active:
   #branding_android:      assets/brand-android.png

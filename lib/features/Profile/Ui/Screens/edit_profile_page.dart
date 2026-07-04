@@ -1,5 +1,5 @@
 import 'package:eshara/Core/Helper/theme.dart';
-import 'package:eshara/features/Profile/Domin/entities/user.dart';
+import 'package:eshara/features/Profile/Domain/entities/profile_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -11,9 +11,9 @@ import '../bloc/profile_state.dart';
 /// بتتعرض لما المستخدم يضغط "تعديل الملف الشخصي".
 /// بتاخد [user] الحالي وبتظهره في الـ fields للتعديل.
 class EditProfilePage extends StatefulWidget {
-  final User user;
+  final ProfileEntity profile;
 
-  const EditProfilePage({super.key, required this.user});
+  const EditProfilePage({super.key, required this.profile});
 
   @override
   State<EditProfilePage> createState() => _EditProfilePageState();
@@ -28,8 +28,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   void initState() {
     super.initState();
     // بنحط بيانات المستخدم الحالية في الـ controllers
-    _nameController = TextEditingController(text: widget.user.name);
-    _emailController = TextEditingController(text: widget.user.email);
+    _nameController = TextEditingController(text: widget.profile.fullName);
+    _emailController = TextEditingController(text: widget.profile.email);
   }
 
   @override
@@ -51,7 +51,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         body: BlocListener<ProfileBloc, ProfileState>(
           listener: (context, state) {
             // لما التحديث ينجح نرجع للصفحة السابقة
-            if (state is ProfileUpdatedState) {
+            if (state is ProfileUpdateSuccess) {
               Navigator.pop(context);
             }
           },
@@ -61,7 +61,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               Expanded(
                 child: BlocBuilder<ProfileBloc, ProfileState>(
                   builder: (context, state) {
-                    final isLoading = state is ProfileUpdatingState;
+                    final isLoading = state is ProfileUpdating;
                     return SingleChildScrollView(
                       padding: const EdgeInsets.all(20),
                       child: Form(
@@ -78,9 +78,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               controller: _nameController,
                               hint: 'أدخل اسمك الجديد',
                               icon: Icons.person_outline_rounded,
-                              validator: (v) => v == null || v.isEmpty
-                                  ? 'الاسم مطلوب'
-                                  : null,
+                              validator: (v) =>
+                                  v == null || v.isEmpty ? 'الاسم مطلوب' : null,
                             ),
 
                             const SizedBox(height: 16),
@@ -151,8 +150,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 color: EsharaTheme.surfaceVariant,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.arrow_forward_ios_rounded,
-                  size: 18, color: EsharaTheme.textPrimary),
+              child: const Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 18,
+                color: EsharaTheme.textPrimary,
+              ),
             ),
           ),
           const Spacer(),
@@ -166,8 +168,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   // ── Helper builders ────────────────────────────────────────────────────────
   Widget _buildLabel(TextTheme tt, String text) {
-    return Text(text,
-        style: tt.titleMedium!.copyWith(color: EsharaTheme.textPrimary));
+    return Text(
+      text,
+      style: tt.titleMedium!.copyWith(color: EsharaTheme.textPrimary),
+    );
   }
 
   Widget _buildField({
@@ -192,11 +196,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
   /// [_onSave] — بتـ validate الـ form وتبعت الـ event للـ BLoC
   void _onSave() {
     if (_formKey.currentState?.validate() ?? false) {
-      final updatedUser = widget.user.copyWith(
-        name: _nameController.text.trim(),
+      final updatedProfile = ProfileEntity(
+        id: widget.profile.id,
+        fullName: _nameController.text.trim(),
         email: _emailController.text.trim(),
+        role: widget.profile.role,
+        createdAt: widget.profile.createdAt,
       );
-      context.read<ProfileBloc>().add(UpdateProfileEvent(user: updatedUser));
+      context.read<ProfileBloc>().add(UpdateProfileEvent(updatedProfile));
     }
   }
 }

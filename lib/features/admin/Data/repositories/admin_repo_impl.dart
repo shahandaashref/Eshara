@@ -1,5 +1,5 @@
 import 'package:eshara/features/admin/Domain/entitys/admin_entities.dart';
-import 'package:eshara/features/admin/Domain/repositorys/admin_repository.dart';
+import 'package:eshara/features/admin/Domain/repositories/admin_repository.dart';
 
 import '../datasources/admin_remote_datasource.dart';
 
@@ -20,8 +20,8 @@ class AdminRepositoryImpl implements AdminRepository {
   Future<List<AdminCategory>> getCategories() =>
       remoteDataSource.getCategories();
   @override
-  Future<AdminCategory> addCategory(String name) =>
-      remoteDataSource.addCategory(name);
+  Future<AdminCategory> addCategory(String name, {String? description}) =>
+      remoteDataSource.addCategory(name, description);
   @override
   Future<void> deleteCategory(String categoryId) =>
       remoteDataSource.deleteCategory(categoryId);

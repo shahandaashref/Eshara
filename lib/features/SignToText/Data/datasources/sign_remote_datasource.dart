@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 import '../models/translation_model.dart';
 import 'package:flutter/foundation.dart';
 
@@ -8,47 +8,39 @@ abstract class SignRemoteDataSource {
 }
 
 class SignRemoteDataSourceImpl implements SignRemoteDataSource {
-  final http.Client client;
+  final Dio dio;
 
-  SignRemoteDataSourceImpl({required this.client});
+  SignRemoteDataSourceImpl({required this.dio, required Object client});
 
   @override
   Future<TranslationModel> translateSign(String videoPath) async {
     try {
-      // 1. تحديد الرابط
-      var uri = Uri.parse(
-        'https://sign-to-text-production.up.railway.app/predict',
-      );
-
-      // 2. إنشاء طلب من نوع Multipart لرفع الملفات
-      var request = http.MultipartRequest('POST', uri);
-
-      // 3. إضافة ملف الفيديو للطلب (يقرأ الملف مباشرة من المسار)
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          'file',
+      // 1. إنشاء FormData لرفع الملف
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(
           videoPath,
-        ), // 'file' هو الـ Key المطلوب في الـ API
+          filename: videoPath.split('/').last,
+        ),
+      });
+
+      // 2. إرسال الطلب باستخدام Dio
+      final response = await dio.post(
+        'https://sign-to-text-production.up.railway.app/predict',
+        data: formData,
+        options: Options(
+          // Dio يستخدم milliseconds, الدقيقتان = 120000ms
+          sendTimeout: const Duration(minutes: 2),
+          receiveTimeout: const Duration(minutes: 2),
+        ),
       );
 
-      // 4. إرسال الطلب للسيرفر واستقبال الرد كـ Stream
-      // ضفنا Timeout دقيقتين عشان لو الفيديو مساحته كبيرة
-      var streamedResponse = await client
-          .send(request)
-          .timeout(const Duration(minutes: 2));
-
-      // 5. تحويل الـ Stream إلى Response عادي لسهولة قراءة البيانات
-      var response = await http.Response.fromStream(streamedResponse);
-
-      // طبعنا الرد في الكونسول عشان نشوف شكله إيه بالظبط
       debugPrint('================= SERVER RESPONSE =================');
-      debugPrint(response.body);
+      debugPrint(json.encode(response.data));
       debugPrint('===================================================');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // تحويل النص لـ JSON ثم للمودل الخاص بك
-        final jsonMap = json.decode(response.body);
-        return TranslationModel.fromJson(jsonMap);
+        // Dio يقوم بتحويل الـ JSON تلقائياً
+        return TranslationModel.fromJson(response.data);
       } else {
         throw Exception(
           "فشل في تحليل الفيديو من السيرفر: كود ${response.statusCode}",

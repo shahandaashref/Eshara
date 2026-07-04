@@ -97,6 +97,20 @@ class AdminCategory {
     this.wordCount,
   });
 
+  AdminCategory copyWith({
+    String? id,
+    String? name,
+    String? description,
+    int? wordCount,
+  }) {
+    return AdminCategory(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      wordCount: wordCount ?? this.wordCount,
+    );
+  }
+
   factory AdminCategory.fromJson(Map<String, dynamic> json) {
     return AdminCategory(
       id: json['id']?.toString() ?? '',
@@ -203,6 +217,18 @@ class AdminStats {
     required this.totalWords,
     required this.pendingRequests,
   });
+
+  AdminStats copyWith({
+    int? totalUsers,
+    int? totalWords,
+    int? pendingRequests,
+  }) {
+    return AdminStats(
+      totalUsers: totalUsers ?? this.totalUsers,
+      totalWords: totalWords ?? this.totalWords,
+      pendingRequests: pendingRequests ?? this.pendingRequests,
+    );
+  }
 
   factory AdminStats.fromJson(Map<String, dynamic> json) {
     return AdminStats(

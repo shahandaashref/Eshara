@@ -1,6 +1,6 @@
 import 'package:eshara/features/Dictionary/Data/datasources/dictionary_remote_datasource.dart';
-import 'package:eshara/features/Dictionary/Domin/entities/sign_entity.dart';
-import 'package:eshara/features/Dictionary/Domin/repositories/dictionary_repository.dart';
+import 'package:eshara/features/Dictionary/Domain/entities/sign_entity.dart';
+import 'package:eshara/features/Dictionary/Domain/repositories/dictionary_repository.dart';
 
 class DictionaryRepositoryImpl implements DictionaryRepository {
   final DictionaryRemoteDataSource remoteDataSource;

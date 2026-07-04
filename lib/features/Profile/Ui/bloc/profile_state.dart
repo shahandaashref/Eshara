@@ -1,35 +1,30 @@
-import 'package:eshara/features/Profile/Domin/entities/user.dart';
-
+import 'package:eshara/features/Profile/Domain/entities/profile_entity.dart';
 
 abstract class ProfileState {}
 
-/// الحالة الأولى — بيجيب البيانات
-class ProfileLoadingState extends ProfileState {}
+/// الحالة الأولية قبل أي عملية
+class ProfileInitial extends ProfileState {}
+
+/// جاري تحميل بيانات الملف الشخصي
+class ProfileLoading extends ProfileState {}
 
 /// البيانات اتحملت بنجاح
-class ProfileLoadedState extends ProfileState {
-  final User user;
-  ProfileLoadedState({required this.user});
+class ProfileLoaded extends ProfileState {
+  final ProfileEntity profile;
+  ProfileLoaded(this.profile);
 }
 
-/// بيتحدث (saving)
-class ProfileUpdatingState extends ProfileState {
-  final User user; // بنحتفظ بالـ user عشان الـ UI ما يختفيش
-  ProfileUpdatingState({required this.user});
-}
+/// جاري تحديث بيانات الملف الشخصي
+class ProfileUpdating extends ProfileState {}
 
-/// التحديث اتعمل بنجاح
-class ProfileUpdatedState extends ProfileState {
-  final User user;
-  ProfileUpdatedState({required this.user});
-}
+/// تم تحديث البيانات بنجاح
+class ProfileUpdateSuccess extends ProfileState {}
 
 /// تسجيل الخروج بنجاح — الـ UI هيروح لصفحة اللوجين
 class ProfileLoggedOutState extends ProfileState {}
 
 /// حصل خطأ
-class ProfileErrorState extends ProfileState {
+class ProfileError extends ProfileState {
   final String message;
-  final User? user; // بنحتفظ بالـ user لو الخطأ حصل بعد التحميل
-  ProfileErrorState({required this.message, this.user});
+  ProfileError(this.message);
 }

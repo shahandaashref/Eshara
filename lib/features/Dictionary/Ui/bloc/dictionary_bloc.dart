@@ -1,7 +1,8 @@
-import 'package:eshara/features/Dictionary/Domin/usecases/get_signs_usecase.dart';
-import 'package:eshara/features/Dictionary/Domin/usecases/search_signs_usecase.dart';
+import 'package:eshara/features/Dictionary/Domain/entities/sign_entity.dart';
+import 'package:eshara/features/Dictionary/Domain/usecases/get_signs_usecase.dart';
+import 'package:eshara/features/Dictionary/Domain/usecases/search_signs_usecase.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:eshara/features/Dictionary/Domin/entities/sign_entity.dart';
+
 import 'package:equatable/equatable.dart';
 
 part 'dictionary_event.dart';

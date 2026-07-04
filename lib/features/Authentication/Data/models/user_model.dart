@@ -1,3 +1,5 @@
+import 'package:jwt_decoder/jwt_decoder.dart';
+
 import '../../Domain/entities/user_entity.dart';
 
 class UserModel extends UserEntity {
@@ -5,13 +7,21 @@ class UserModel extends UserEntity {
     required super.email,
     super.fullname,
     super.token,
+    required super.role,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    final token = json['token'] as String?;
+    final decodedToken = token != null
+        ? JwtDecoder.decode(token)
+        : <String, dynamic>{};
     return UserModel(
-      email: json['email'],
-      fullname: json['fullname'], // الاسم الكامل اللي جاي من الـ ASP.NET
-      token: json['token'], // التوكن اللي جاي من الـ ASP.NET
+      email: decodedToken['email'] ?? '',
+      fullname: decodedToken['name'] ?? '',
+      token: token,
+      role:
+          decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ??
+          'User',
     );
   }
 }

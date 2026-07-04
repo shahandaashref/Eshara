@@ -18,9 +18,7 @@ class SnackbarHelper {
           child: Row(
             children: [
               Icon(
-                isError
-                    ? Icons.error_outline_rounded
-                    : Icons.info_outline_rounded,
+                isError ? Icons.error_rounded : Icons.check_circle_rounded,
                 color: Colors.white,
               ),
               const SizedBox(width: 12),
@@ -37,7 +35,7 @@ class SnackbarHelper {
             ],
           ),
         ),
-        backgroundColor: isError ? EsharaTheme.error : EsharaTheme.primaryBlue,
+        backgroundColor: isError ? EsharaTheme.error : EsharaTheme.success,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),

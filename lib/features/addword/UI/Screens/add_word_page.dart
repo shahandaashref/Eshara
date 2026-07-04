@@ -1,11 +1,11 @@
 import 'package:eshara/Core/Helper/theme.dart';
-import 'package:eshara/Core/di/injection_container.dart';
 import 'package:eshara/features/addword/UI/Screens/add_word_success_page.dart';
 import 'package:eshara/features/addword/UI/Widgets/video_upload_box.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/add_word_bloc.dart';
 import '../bloc/add_word_bloc_state_event.dart';
+import 'package:eshara/Core/di/injection_container.dart';
 
 /// [Page] — AddWordPage
 /// بتتعرض لما المستخدم يضغط "إضافة كلمة جديدة".
@@ -16,10 +16,6 @@ class AddWordPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!sl.isRegistered<AddWordBloc>()) {
-      initDependencies();
-    }
-
     return BlocProvider(
       create: (_) => sl<AddWordBloc>(),
       child: const _AddWordView(),

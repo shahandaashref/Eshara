@@ -1,4 +1,5 @@
 import 'package:eshara/Core/Helper/theme.dart';
+import 'package:eshara/Core/Helper/snackbar_helper.dart';
 import 'package:eshara/features/admin/Domain/entitys/admin_entities.dart';
 import 'package:eshara/features/admin/UI/Widget/admin_widgets.dart';
 import 'package:flutter/material.dart';
@@ -40,11 +41,14 @@ class _AdminWordsPageState extends State<AdminWordsPage> {
               actions: [
                 // زرار إضافة كلمة جديدة
                 BlocBuilder<AdminBloc, AdminState>(
-                  builder: (context, state) {
+                  builder: (ctx, state) {
                     return GestureDetector(
-                      onTap: () {
+                      onTap: () async {
                         if (state is AdminWordsState) {
-                          _showAddWordSheet(context, state.categories);
+                          await _showAddWordSheet(ctx, state.categories);
+                          ctx.read<AdminBloc>().add(
+                            LoadWordsEvent(categoryId: _selectedCategory),
+                          );
                         }
                       },
                       child: Container(
@@ -82,9 +86,13 @@ class _AdminWordsPageState extends State<AdminWordsPage> {
               child: BlocConsumer<AdminBloc, AdminState>(
                 listener: (context, state) {
                   if (state is AdminActionSuccessState) {
-                    ScaffoldMessenger.of(
+                    SnackbarHelper.showCustomSnackBar(context, state.message);
+                  } else if (state is AdminErrorState) {
+                    SnackbarHelper.showCustomSnackBar(
                       context,
-                    ).showSnackBar(SnackBar(content: Text(state.message)));
+                      state.message,
+                      isError: true,
+                    );
                   }
                 },
                 builder: (context, state) {
@@ -96,7 +104,10 @@ class _AdminWordsPageState extends State<AdminWordsPage> {
                     );
                   }
                   if (state is AdminWordsState) {
-                    return _buildContent(context, tt, state);
+                    return _buildContent(context, tt, state, state.isLoading);
+                  }
+                  if (state is AdminErrorState) {
+                    return Center(child: Text(state.message));
                   }
                   return const SizedBox();
                 },
@@ -112,6 +123,7 @@ class _AdminWordsPageState extends State<AdminWordsPage> {
     BuildContext context,
     TextTheme tt,
     AdminWordsState state,
+    bool isLoading,
   ) {
     return Column(
       children: [
@@ -125,9 +137,7 @@ class _AdminWordsPageState extends State<AdminWordsPage> {
             separatorBuilder: (_, __) => const SizedBox(width: 8),
             itemBuilder: (_, i) {
               final cat = state.categories[i];
-              final selected =
-                  _selectedCategory == cat.id ||
-                  (_selectedCategory == null && cat.name == 'الكل');
+              final selected = state.selectedCategory == cat.id;
               return GestureDetector(
                 onTap: () {
                   setState(
@@ -170,26 +180,52 @@ class _AdminWordsPageState extends State<AdminWordsPage> {
 
         // ── Words list ───────────────────────────────────────────────
         Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: state.words.length,
-            itemBuilder: (_, i) {
-              final word = state.words[i];
-              return AdminWordTile(
-                word: word.word,
-                thumbnailUrl: word.thumbnailUrl,
-                onEdit: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => BlocProvider.value(
-                      value: context.read<AdminBloc>(),
-                      child: AdminWordDetailPage(word: word, isEdit: true),
-                    ),
-                  ),
-                ),
-                onDelete: () => _showDeleteSheet(context, word),
+          child: RefreshIndicator(
+            onRefresh: () async {
+              context.read<AdminBloc>().add(
+                LoadWordsEvent(categoryId: _selectedCategory),
               );
             },
+            color: EsharaTheme.primaryBlue,
+            child: Stack(
+              children: [
+                ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: state.words.length,
+                  itemBuilder: (_, i) {
+                    final word = state.words[i];
+                    return AdminWordTile(
+                      word: word.word,
+                      thumbnailUrl: word.thumbnailUrl,
+                      onEdit: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => BlocProvider.value(
+                              value: context.read<AdminBloc>(),
+                              child: AdminWordDetailPage(
+                                word: word,
+                                isEdit: true,
+                              ),
+                            ),
+                          ),
+                        );
+                        context.read<AdminBloc>().add(
+                          LoadWordsEvent(categoryId: _selectedCategory),
+                        );
+                      },
+                      onDelete: () => _showDeleteSheet(context, word),
+                    );
+                  },
+                ),
+                if (isLoading)
+                  const Center(
+                    child: CircularProgressIndicator(
+                      color: EsharaTheme.primaryBlue,
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ],
@@ -197,8 +233,11 @@ class _AdminWordsPageState extends State<AdminWordsPage> {
   }
 
   // ── Add Word Sheet ─────────────────────────────────────────────────────────
-  void _showAddWordSheet(BuildContext context, List<AdminCategory> categories) {
-    showModalBottomSheet(
+  Future<void> _showAddWordSheet(
+    BuildContext context,
+    List<AdminCategory> categories,
+  ) async {
+    await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
@@ -207,7 +246,7 @@ class _AdminWordsPageState extends State<AdminWordsPage> {
       builder: (_) => BlocProvider.value(
         value: context.read<AdminBloc>(),
         child: _AddWordSheet(
-          categories: categories.where((c) => c.id != 'all').toList(),
+          categories: categories.where((c) => c.name != 'الكل').toList(),
         ),
       ),
     );
@@ -223,8 +262,9 @@ class _AdminWordsPageState extends State<AdminWordsPage> {
       builder: (_) => ConfirmDeleteSheet(
         title: 'حذف الكلمة',
         subtitle: 'هل أنت متأكد من حذف كلمة "${word.word}"؟',
-        onConfirm: () =>
-            context.read<AdminBloc>().add(DeleteWordEvent(wordId: word.id)),
+        onConfirm: () {
+          context.read<AdminBloc>().add(DeleteWordEvent(wordId: word.id));
+        },
       ),
     );
   }

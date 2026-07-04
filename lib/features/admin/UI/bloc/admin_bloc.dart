@@ -1,7 +1,7 @@
 import 'package:eshara/features/admin/Domain/entitys/admin_entities.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../domain/usecases/admin_usecases.dart';
+import '../../Domain/usecases/admin_usecases.dart';
 import 'admin_event_state.dart';
 
 /// [BLoC] — AdminBloc
@@ -50,37 +50,64 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     Emitter<AdminState> emit,
   ) async {
     emit(AdminLoadingState());
+
+    final List<AdminWord> words = [];
+    final List<AdminCategory> categories = [];
+    final List<WordRequest> requests = [];
+    dynamic users = [];
+    final List<String> errors = [];
+
     try {
-      // جلب جميع البيانات المطلوبة للوحة التحكم بشكل متزامن
-      final results = await Future.wait([
-        getWords(),
-        getCategories(),
-        getRequests(),
-      ]);
+      words.addAll(await getWords());
+    } catch (e) {
+      errors.add('فشل تحميل الكلمات: $e');
+    }
 
-      final words = results[0] as List<AdminWord>;
-      final categories = results[1] as List<AdminCategory>;
-      final requests = results[2] as List<WordRequest>;
+    try {
+      categories.addAll(await getCategories());
+    } catch (e) {
+      errors.add('فشل تحميل الفئات: $e');
+    }
 
-      // إنشاء الإحصائيات مباشرة هنا في البلوك
-      final stats = AdminStats(
-        totalWords: words.length,
-        pendingRequests: requests
-            .where((r) => r.status == WordRequestStatus.pending)
-            .length,
-        totalUsers: 0, // Endpoint not available
-      );
+    try {
+      requests.addAll(await getRequests());
+    } catch (e) {
+      errors.add('فشل تحميل طلبات الكلمات: $e');
+    }
 
+    try {
+      users = await getUsers();
+    } catch (e) {
+      errors.add('فشل تحميل المستخدمين: $e');
+    }
+
+    if (errors.length == 4) {
+      // إذا فشلت كل الطلبات
       emit(
-        AdminDashboardState(
-          stats: stats,
-          recentWords: words.take(4).toList(),
-          categories: categories,
+        AdminErrorState(
+          message: errors.isNotEmpty
+              ? errors.join(' | ')
+              : 'تعذر تحميل البيانات',
         ),
       );
-    } catch (_) {
-      emit(AdminErrorState(message: 'تعذر تحميل البيانات'));
+      return;
     }
+
+    final stats = AdminStats(
+      totalWords: words.length,
+      pendingRequests: requests
+          .where((r) => r.status == WordRequestStatus.pending)
+          .length, // يتم حساب الطلبات المعلقة فقط
+      totalUsers: (users is List) ? users.length : 0,
+    );
+
+    emit(
+      AdminDashboardState(
+        stats: stats,
+        recentWords: words.take(4).toList(),
+        categories: categories,
+      ),
+    );
   }
 
   Future<void> _onLoadWords(LoadWordsEvent e, Emitter<AdminState> emit) async {
@@ -111,8 +138,8 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         ),
       );
       add(LoadWordsEvent());
-    } catch (_) {
-      emit(AdminErrorState(message: 'تعذر إضافة الكلمة'));
+    } catch (e) {
+      emit(AdminErrorState(message: 'تعذر إضافة الكلمة: $e'));
     }
   }
 
@@ -130,8 +157,8 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         ),
       );
       add(LoadWordsEvent());
-    } catch (_) {
-      emit(AdminErrorState(message: 'تعذر تعديل الكلمة'));
+    } catch (e) {
+      emit(AdminErrorState(message: 'تعذر تعديل الكلمة: $e'));
     }
   }
 
@@ -149,8 +176,8 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         ),
       );
       add(LoadWordsEvent());
-    } catch (_) {
-      emit(AdminErrorState(message: 'تعذر حذف الكلمة'));
+    } catch (e) {
+      emit(AdminErrorState(message: 'تعذر حذف الكلمة: $e'));
     }
   }
 
@@ -162,8 +189,8 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     try {
       final cats = await getCategories();
       emit(AdminCategoriesState(categories: cats));
-    } catch (_) {
-      emit(AdminErrorState(message: 'تعذر تحميل الفئات'));
+    } catch (e) {
+      emit(AdminErrorState(message: 'تعذر تحميل الفئات: $e'));
     }
   }
 
@@ -173,7 +200,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
   ) async {
     final prev = state;
     try {
-      await addCategory(e.name);
+      await addCategory(name: e.name, description: e.description);
       emit(
         AdminActionSuccessState(
           message: 'تمت إضافة الفئة بنجاح',
@@ -181,8 +208,8 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         ),
       );
       add(LoadCategoriesEvent());
-    } catch (_) {
-      emit(AdminErrorState(message: 'تعذر إضافة الفئة'));
+    } catch (e) {
+      emit(AdminErrorState(message: 'تعذر إضافة الفئة: $e'));
     }
   }
 
@@ -200,8 +227,8 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         ),
       );
       add(LoadCategoriesEvent());
-    } catch (_) {
-      emit(AdminErrorState(message: 'تعذر حذف الفئة'));
+    } catch (e) {
+      emit(AdminErrorState(message: 'تعذر حذف الفئة: $e'));
     }
   }
 
@@ -213,8 +240,8 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     try {
       final requests = await getRequests();
       emit(AdminRequestsState(requests: requests));
-    } catch (_) {
-      emit(AdminErrorState(message: 'تعذر تحميل الطلبات'));
+    } catch (e) {
+      emit(AdminErrorState(message: 'تعذر تحميل الطلبات: $e'));
     }
   }
 
@@ -232,8 +259,8 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         ),
       );
       add(LoadRequestsEvent());
-    } catch (_) {
-      emit(AdminErrorState(message: 'تعذر قبول الطلب'));
+    } catch (e) {
+      emit(AdminErrorState(message: 'تعذر قبول الطلب: $e'));
     }
   }
 
@@ -248,8 +275,8 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         AdminActionSuccessState(message: 'تم رفض الطلب', previousState: prev),
       );
       add(LoadRequestsEvent());
-    } catch (_) {
-      emit(AdminErrorState(message: 'تعذر رفض الطلب'));
+    } catch (e) {
+      emit(AdminErrorState(message: 'تعذر رفض الطلب: $e'));
     }
   }
 }

@@ -1,4 +1,4 @@
-import 'package:eshara/features/Dictionary/Domin/entities/sign_entity.dart';
+import 'package:eshara/features/Dictionary/Domain/entities/sign_entity.dart';
 
 class SignModel extends SignEntity {
   const SignModel({

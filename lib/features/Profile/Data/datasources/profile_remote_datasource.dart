@@ -1,54 +1,62 @@
-import 'package:eshara/Core/Helper/current_user_store.dart';
+import 'package:dio/dio.dart';
+import 'package:eshara/features/Profile/Domain/entities/profile_entity.dart';
+import '../models/profile_model.dart';
 
-import '../models/user_model.dart';
-
-/// [DataSource Contract] — ProfileRemoteDataSource
 abstract class ProfileRemoteDataSource {
-  Future<UserModel> getUser();
-  Future<UserModel> updateUser(UserModel user);
+  Future<ProfileModel> getProfile();
+  Future<void> updateProfile(ProfileEntity profile);
   Future<void> logout();
-  Future<void> toggleNotifications(bool enabled);
 }
 
-/// [DataSource Implementation] — ProfileRemoteDataSourceImpl
-/// دلوقتي بترجع mock data — استبدلها بـ HTTP calls حقيقية
 class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
-  /// [getUser] — بيجيب بيانات المستخدم من الـ API
-  /// TODO: استبدل بـ GET /api/user
-  @override
-  Future<UserModel> getUser() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    final store = CurrentUserStore.instance;
-    final name = store.name.isNotEmpty ? store.name : '';
-    final email = store.email.isNotEmpty ? store.email : '';
+  final Dio dio;
 
-    return UserModel(
-      id: '1',
-      name: name,
-      email: email,
-      notificationsEnabled: true,
-    );
+  ProfileRemoteDataSourceImpl({required this.dio});
+
+  @override
+  Future<ProfileModel> getProfile() async {
+    try {
+      final response = await dio.get('/api/User/profile');
+
+      // جعل الكود أكثر مرونة للتعامل مع أشكال مختلفة من الاستجابة
+      Map<String, dynamic>? data;
+      if (response.data is Map<String, dynamic>) {
+        if (response.data.containsKey('data') &&
+            response.data['data'] is Map<String, dynamic>) {
+          data = response.data['data'] as Map<String, dynamic>;
+        } else {
+          data = response
+              .data; // التعامل مع الحالة التي تكون فيها البيانات هي الاستجابة نفسها
+        }
+      }
+
+      if (data == null) {
+        throw Exception('فشلت العملية: الخادم لم يرجع بيانات صالحة.');
+      }
+
+      return ProfileModel.fromJson(data);
+    } on DioException catch (e) {
+      throw Exception('Failed to load profile: ${e.message}');
+    }
   }
 
-  /// [updateUser] — بيبعت التعديلات الجديدة للـ API
-  /// TODO: استبدل بـ PUT /api/user
   @override
-  Future<UserModel> updateUser(UserModel user) async {
-    await Future.delayed(const Duration(milliseconds: 800));
-    return user;
+  Future<void> updateProfile(ProfileEntity profile) async {
+    try {
+      // افترض أن الـ API يتوقع هذا الشكل من البيانات
+      await dio.put(
+        '/api/User/profile',
+        data: {'fullName': profile.fullName, 'email': profile.email},
+      );
+    } on DioException catch (e) {
+      throw Exception('Failed to update profile: ${e.message}');
+    }
   }
 
-  /// [logout] — بيمسح الـ session ويعمل تسجيل خروج
-  /// TODO: استبدل بـ POST /api/logout
   @override
   Future<void> logout() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-  }
-
-  /// [toggleNotifications] — بيحدث حالة الإشعارات في الـ API
-  /// TODO: استبدل بـ PATCH /api/user/notifications
-  @override
-  Future<void> toggleNotifications(bool enabled) async {
-    await Future.delayed(const Duration(milliseconds: 300));
+    // هنا يمكنك استدعاء API لتسجيل الخروج إذا كان موجوداً
+    // أو يمكنك فقط حذف التوكن من التخزين المحلي
+    // await dio.post('/api/Auth/logout');
   }
 }

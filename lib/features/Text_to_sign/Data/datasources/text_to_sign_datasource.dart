@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import '../models/sign_video_model.dart';
 
 /// [DataSource Contract] — TextToSignRemoteDataSource
@@ -6,20 +7,30 @@ abstract class TextToSignRemoteDataSource {
 }
 
 /// [DataSource Implementation] — TextToSignRemoteDataSourceImpl
-/// دلوقتي بترجع mock data — استبدلها بـ HTTP call للـ AI model
+/// تم تحديثها لتستخدم استدعاء HTTP حقيقي
 class TextToSignRemoteDataSourceImpl implements TextToSignRemoteDataSource {
+  final Dio dio;
+
+  TextToSignRemoteDataSourceImpl({required this.dio});
 
   /// [convertTextToSign] — بتبعت النص للـ AI ويرجع رابط الفيديو
-  /// TODO: استبدل بـ POST /api/text-to-sign
   @override
   Future<SignVideoModel> convertTextToSign(String text) async {
-    // بتحاكي وقت معالجة الـ AI
-    await Future.delayed(const Duration(seconds: 3));
-
-    return SignVideoModel(
-      inputText: text,
-      videoUrl: 'https://mock.api/videos/sign_output.mp4',
-      createdAt: DateTime.now(),
-    );
+    try {
+      final response = await dio.post(
+        '/api/Translation/text-to-sign',
+        data: {'text': text},
+      );
+      if (response.data != null && response.data['success'] == true) {
+        return SignVideoModel(
+          inputText: text,
+          videoUrl: response.data['videoUrl'],
+          createdAt: DateTime.now(),
+        );
+      }
+      throw Exception(response.data['message'] ?? 'فشل تحويل النص إلى إشارة');
+    } on DioException catch (e) {
+      throw Exception('فشل تحويل النص: ${e.message}');
+    }
   }
 }

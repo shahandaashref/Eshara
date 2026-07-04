@@ -5,15 +5,11 @@ import '../../domain/entities/sign_video.dart';
 
 class SignVideoPlayer extends StatefulWidget {
   final SignVideo signVideo;
-  final bool isPlaying;
-  final VoidCallback onPlayPause;
   final VoidCallback onDownload;
 
   const SignVideoPlayer({
     super.key,
     required this.signVideo,
-    required this.isPlaying,
-    required this.onPlayPause,
     required this.onDownload,
   });
 
@@ -22,7 +18,7 @@ class SignVideoPlayer extends StatefulWidget {
 }
 
 class _SignVideoPlayerState extends State<SignVideoPlayer> {
-  late VideoPlayerController _controller;
+  VideoPlayerController? _controller;
   bool _isInitialized = false;
   bool _hasError = false;
 
@@ -35,13 +31,13 @@ class _SignVideoPlayerState extends State<SignVideoPlayer> {
   Future<void> _initializePlayer() async {
     try {
       // نقوم بتشغيل الفيديو من الرابط (URL) القادم من السيرفر
-      _controller = VideoPlayerController.networkUrl(
+      final controller = VideoPlayerController.networkUrl(
         Uri.parse(widget.signVideo.videoUrl),
       );
-
-      await _controller.initialize();
-      _controller.setLooping(true); // تكرار الفيديو تلقائياً
-      _controller.play(); // تشغيل تلقائي
+      _controller = controller;
+      await controller.initialize();
+      _controller?.setLooping(true); // تكرار الفيديو تلقائياً
+      _controller?.play(); // تشغيل تلقائي
 
       if (mounted) {
         setState(() {
@@ -65,14 +61,14 @@ class _SignVideoPlayerState extends State<SignVideoPlayer> {
     if (oldWidget.signVideo.videoUrl != widget.signVideo.videoUrl) {
       _isInitialized = false;
       _hasError = false;
-      _controller.dispose();
+      _controller?.dispose();
       _initializePlayer();
     }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
@@ -80,92 +76,94 @@ class _SignVideoPlayerState extends State<SignVideoPlayer> {
   Widget build(BuildContext context) {
     return Container(
       height: 280,
+      clipBehavior:
+          Clip.antiAlias, // لضمان أن كل المحتوى يلتزم بالـ borderRadius
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A2E), // خلفية داكنة أثناء التحميل
+        color: EsharaTheme.surfaceVariant,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: EsharaTheme.border, width: 2),
       ),
       child: Stack(
         alignment: Alignment.center,
         children: [
           // 1. المشغل الفعلي
-          if (_isInitialized)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
+          if (_isInitialized && !_hasError)
+            Center(
               child: AspectRatio(
-                aspectRatio: _controller.value.aspectRatio,
-                child: VideoPlayer(_controller),
+                aspectRatio: _controller!.value.aspectRatio,
+                child: VideoPlayer(_controller!),
               ),
-            )
+            ),
+
           // 2. حالة الخطأ
-          else if (_hasError)
-            const Center(
+          if (_hasError)
+            Center(
               child: Text(
                 'تعذر تحميل الفيديو',
                 style: TextStyle(color: EsharaTheme.error, fontFamily: 'Cairo'),
               ),
-            )
+            ),
+
           // 3. حالة التحميل
-          else
+          if (!_isInitialized && !_hasError)
             const Center(
               child: CircularProgressIndicator(color: EsharaTheme.primaryBlue),
             ),
 
           // ── أزرار التحكم (تشغيل/إيقاف وتحميل) ──
-          if (_isInitialized)
-            Positioned(
-              bottom: 12,
-              right: 12,
-              left: 12,
+          Positioned(
+            bottom: 0,
+            right: 0,
+            left: 0,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: EsharaTheme.border)),
+                color: EsharaTheme.surface, // خلفية شريط التحكم
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // زر التحميل
-                  GestureDetector(
-                    onTap: widget.onDownload,
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.download_rounded,
-                        color: Colors.white,
-                        size: 20,
-                      ),
+                  // زر التشغيل / الإيقاف المؤقت
+                  IconButton(
+                    onPressed: _isInitialized
+                        ? () {
+                            setState(() {
+                              _controller?.value.isPlaying ?? false
+                                  ? _controller?.pause()
+                                  : _controller?.play();
+                            });
+                          }
+                        : null,
+                    icon: Icon(
+                      _controller?.value.isPlaying ?? false
+                          ? Icons.pause_circle_filled_rounded
+                          : Icons.play_circle_fill_rounded,
+                      color: EsharaTheme.primaryBlue,
+                      size: 36,
                     ),
                   ),
 
-                  // زر التشغيل / الإيقاف المؤقت
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        if (_controller.value.isPlaying) {
-                          _controller.pause();
-                        } else {
-                          _controller.play();
-                        }
-                      });
-                      widget.onPlayPause(); // إبلاغ الصفحة بالأكشن
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        _controller.value.isPlaying
-                            ? Icons.pause_rounded
-                            : Icons.play_arrow_rounded,
-                        color: Colors.white,
-                        size: 20,
+                  // زر التحميل
+                  TextButton.icon(
+                    onPressed: widget.onDownload,
+                    icon: const Icon(Icons.download_rounded, size: 20),
+                    label: Text(
+                      'تحميل',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    style: TextButton.styleFrom(
+                      foregroundColor: EsharaTheme.textSecondary,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
                       ),
                     ),
                   ),
                 ],
               ),
             ),
+          ),
         ],
       ),
     );

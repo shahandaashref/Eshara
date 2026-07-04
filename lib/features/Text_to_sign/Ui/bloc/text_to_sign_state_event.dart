@@ -31,8 +31,8 @@ class TextToSignIdleState extends TextToSignState {}
 
 /// بيعالج النص — فيه progress وخطوات
 class TextToSignProcessingState extends TextToSignState {
-  final double progress;              // 0.0 → 1.0
-  final List<TextToSignStep> steps;   // الخطوات الثلاثة
+  final double progress; // 0.0 → 1.0
+  final List<TextToSignStep> steps; // الخطوات الثلاثة
 
   TextToSignProcessingState({required this.progress, required this.steps});
 }
@@ -40,14 +40,8 @@ class TextToSignProcessingState extends TextToSignState {
 /// الفيديو جاهز للعرض
 class TextToSignResultState extends TextToSignState {
   final SignVideo signVideo;
-  final bool isPlaying;           // حالة الـ video player
 
-  TextToSignResultState({required this.signVideo, this.isPlaying = false});
-
-  TextToSignResultState copyWith({bool? isPlaying}) => TextToSignResultState(
-        signVideo: signVideo,
-        isPlaying: isPlaying ?? this.isPlaying,
-      );
+  TextToSignResultState({required this.signVideo});
 }
 
 /// حصل خطأ

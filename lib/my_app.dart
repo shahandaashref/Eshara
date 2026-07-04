@@ -1,5 +1,7 @@
 import 'package:eshara/Core/Helper/theme.dart';
+import 'package:eshara/Core/di/dependency_injection.dart';
 import 'package:eshara/Core/di/injection_container.dart';
+
 import 'package:eshara/current_user_store.dart';
 import 'package:eshara/features/Authentication/UI/Screens/forget_password.dart';
 
@@ -16,7 +18,7 @@ import 'package:eshara/features/Dictionary/Ui/bloc/dictionary_bloc.dart';
 import 'package:eshara/features/Profile/Ui/bloc/profile_event.dart';
 import 'package:eshara/features/SignToText/UI/Screens/sign_to_text_page.dart';
 import 'package:eshara/features/SignToText/UI/bloc/sign_bloc.dart';
-import 'package:eshara/features/Text_to_sign/Ui/Screens/text_to_sign_page.dart';
+import 'package:eshara/features/Text_to_sign/UI/Screens/text_to_sign_page.dart';
 import 'package:eshara/features/Text_to_sign/Ui/bloc/text_to_sign_bloc.dart';
 import 'package:eshara/features/addword/UI/Screens/add_word_page.dart';
 import 'package:eshara/features/admin/UI/bloc/admin_bloc.dart';
@@ -52,7 +54,7 @@ class AuthWrapper extends StatelessWidget {
     }
 
     // إذا كان المستخدم "admin"، يتم توجيهه للوحة تحكم الأدمن
-    if (currentUser.role == 'Admin' || currentUser.role == 'admin') {
+    if (currentUser.role!.toLowerCase() == 'admin') {
       return const AdminDashboardPage();
     }
 
@@ -67,6 +69,7 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    // تم نقل استدعاء initDependencies() إلى ملف main.dart لضمان تهيئتها مرة واحدة فقط
     return MultiBlocProvider(
       providers: [
         // ProfileBloc — متاح في كل الصفحات
@@ -107,7 +110,8 @@ class MyApp extends StatelessWidget {
         // نستخدم Builder هنا لضمان أن AuthWrapper يحصل على context صحيح
         // يكون "تحت" MaterialApp في شجرة الويدجت.
         // هذا يحل مشكلة الوصول للـ BLoC Providers من الصفحات التي يعرضها AuthWrapper.
-        initialRoute: '/admin_dashboard', // تم تعديل المسار الافتراضي ليكون لوحة تحكم الأدمن
+        initialRoute:
+            '/auth', // تم تعديل المسار الافتراضي ليكون لوحة تحكم الأدمن
         routes: {
           '/auth': (context) => const AuthWrapper(),
           '/home': (context) => HomePage(), // تم التعديل ليشير إلى MainPage
@@ -116,7 +120,6 @@ class MyApp extends StatelessWidget {
           '/login': (context) => LoginPage(),
           '/reset_password': (context) => ResetPasswordPage(),
           '/forget_password': (context) => ForgetPasswordPage(),
-          // تم حذف '/verify_email' من هنا لأنه يُدار عبر onGenerateRoute
           '/signtotext': (context) => SignToTextPage(),
           '/texttosign': (context) => TextToSignPage(),
           '/profile': (context) => ProfilePage(),

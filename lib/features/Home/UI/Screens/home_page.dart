@@ -77,11 +77,10 @@ class _HomePageState extends State<HomePage>
                 child: _buildBody(tt),
               ),
             ),
-          
-      )],
-        ),
-      );
-    
+          ),
+        ],
+      ),
+    );
   }
 
   /// دالة بناء محتوى الصفحة الأساسي (الجزء الموجود أسفل الـ AppBar)
@@ -109,15 +108,10 @@ class _HomePageState extends State<HomePage>
     return BlocBuilder<ProfileBloc, ProfileState>(
       builder: (context, state) {
         String displayName = '';
-
-        if (state is ProfileLoadedState) {
-          displayName = state.user.name.trim().isNotEmpty
-              ? state.user.name
-              : '';
-        } else if (state is ProfileUpdatedState) {
-          displayName = state.user.name.trim().isNotEmpty
-              ? state.user.name
-              : '';
+        // تم تحديث الحالة إلى الاسم الصحيح `ProfileLoaded`
+        if (state is ProfileLoaded) {
+          // تم تصحيح الوصول إلى اسم المستخدم
+          displayName = state.profile.fullName;
         }
 
         return Container(

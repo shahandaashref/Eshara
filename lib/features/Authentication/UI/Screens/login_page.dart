@@ -1,11 +1,11 @@
 import 'package:eshara/Core/Helper/helper.dart';
 import 'package:eshara/features/Authentication/UI/Screens/register_page.dart';
+import 'package:eshara/current_user_store.dart';
 import 'package:eshara/features/Authentication/UI/Widget/ask_if_sign_in_up.dart';
 import 'package:eshara/Core/Helper/snackbar_helper.dart';
 import 'package:eshara/features/Authentication/UI/Widget/custom_text_form_field.dart';
 import 'package:eshara/features/Authentication/UI/Widget/google_media.dart';
 import 'package:eshara/features/Authentication/UI/Widget/header_app_bar_and_backgroun_auth.dart';
-import 'package:eshara/features/Authentication/UI/Widget/or_and_divider.dart';
 import 'package:eshara/features/Authentication/UI/bloc/auth_bloc.dart';
 import 'package:eshara/features/Authentication/UI/bloc/auth_event.dart';
 import 'package:eshara/features/Authentication/UI/bloc/auth_state.dart';
@@ -93,6 +93,13 @@ class _LoginPageState extends State<LoginPage> {
                 BlocConsumer<AuthBloc, AuthState>(
                   listener: (context, state) {
                     if (state is AuthSuccess && state.user != null) {
+                      // نقوم بتخزين بيانات المستخدم في المخزن المؤقت
+                      CurrentUserStore().setUser(
+                        name: state.user!.name,
+                        email: state.user!.email,
+                        role: state.user!.role,
+                      );
+
                       // المنطق الآن بسيط: تحقق من الدور في الكائن الجاهز
                       // تحديث بيانات البروفايل في التطبيق بالكامل
                       context.read<ProfileBloc>().add(LoadProfileEvent());
@@ -102,17 +109,8 @@ class _LoginPageState extends State<LoginPage> {
                           return; // التحقق من أن الواجهة لا تزال موجودة
                         }
 
-                        final role = state.user!.role.trim();
-                        final isAdmin = role.toLowerCase() == 'admin';
-
-                        if (isAdmin) {
-                          Navigator.pushReplacementNamed(
-                            context,
-                            '/admin_dashboard',
-                          );
-                        } else {
-                          Navigator.pushReplacementNamed(context, '/');
-                        }
+                        // التوجيه إلى AuthWrapper ليقوم هو بتحديد الوجهة الصحيحة
+                        Navigator.pushReplacementNamed(context, '/auth');
                       });
                     } else if (state is AuthFailure) {
                       SnackbarHelper.showCustomSnackBar(
@@ -157,7 +155,7 @@ class _LoginPageState extends State<LoginPage> {
                   },
                 ),
                 const SizedBox(height: 10), // Fixed: was height = 10
-                orDividir(),
+                const Divider(),
                 GoogleMediaIcons(
                   onPressed: () {},
                 ), // Fixed: was onPressed = () {}
