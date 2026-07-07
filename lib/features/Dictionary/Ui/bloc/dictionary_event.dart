@@ -7,12 +7,14 @@ abstract class DictionaryEvent extends Equatable {
   List<Object> get props => [];
 }
 
-class LoadSignsEvent extends DictionaryEvent {
-  final String category;
-  const LoadSignsEvent(this.category);
+class LoadCategoriesEvent extends DictionaryEvent {}
+
+class LoadWordsEvent extends DictionaryEvent {
+  final String categoryId;
+  const LoadWordsEvent({required this.categoryId});
 
   @override
-  List<Object> get props => [category];
+  List<Object> get props => [categoryId];
 }
 
 class SearchSignsEvent extends DictionaryEvent {

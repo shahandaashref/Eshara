@@ -1,4 +1,4 @@
-import 'package:eshara/features/SignToText/Domain/entities/translation.dart';
+import 'package:eshara/features/SignToText/domain/entities/translation.dart';
 
 
 

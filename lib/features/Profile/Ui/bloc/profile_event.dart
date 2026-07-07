@@ -1,4 +1,4 @@
-import 'package:eshara/features/Profile/Domain/entities/profile_entity.dart';
+import 'package:eshara/features/Profile/domain/entities/profile_entity.dart';
 
 abstract class ProfileEvent {}
 

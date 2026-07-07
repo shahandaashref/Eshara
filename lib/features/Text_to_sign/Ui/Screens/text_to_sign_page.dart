@@ -2,20 +2,16 @@ import 'package:eshara/Core/Helper/theme.dart';
 import 'package:eshara/Core/Helper/snackbar_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:eshara/Core/di/dependency_injection.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import 'package:eshara/Core/di/injection_container.dart';
 
 import '../bloc/text_to_sign_bloc.dart';
 import '../bloc/text_to_sign_state_event.dart';
 import '../widgets/text_input_card.dart';
 import '../widgets/text_to_sign_processing.dart';
-import '../widgets/sign_video_player.dart';
 
 /// [Page] — TextToSignPage
-/// بتعرض 3 states:
-/// 1. Idle    → text field + AI avatar placeholder
-/// 2. Processing → circular progress + steps
-/// 3. Result  → text + AI video player + download
+/// بتعرض 3 states: Idle | Processing | Result (WebView)
 class TextToSignPage extends StatelessWidget {
   const TextToSignPage({super.key});
 
@@ -52,20 +48,31 @@ class _TextToSignViewState extends State<_TextToSignView> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: EsharaTheme.background,
-        body: BlocBuilder<TextToSignBloc, TextToSignState>(
-          builder: (context, state) {
-            // في حالة الـ processing بتظهر صفحة مختلفة خالص
-            if (state is TextToSignProcessingState) {
-              return _buildProcessingScreen(context, state, tt);
+        body: BlocConsumer<TextToSignBloc, TextToSignState>(
+          listener: (context, state) {
+            if (state is TextToSignErrorState) {
+              SnackbarHelper.showCustomSnackBar(context, state.message);
+              context.read<TextToSignBloc>().add(ResetTextToSignEvent());
             }
-
+          },
+          builder: (context, state) {
             return Column(
               children: [
                 _buildAppBar(context, tt, state),
                 Expanded(
-                  child: state is TextToSignResultState
-                      ? _buildResultBody(context, state, tt)
-                      : _buildIdleBody(context, tt),
+                  child: switch (state) {
+                    TextToSignProcessingState() => _buildProcessingScreen(
+                      context,
+                      state,
+                      tt,
+                    ),
+                    TextToSignResultState() => _buildResultBody(
+                      context,
+                      state,
+                      tt,
+                    ),
+                    _ => _buildIdleBody(context, tt),
+                  },
                 ),
               ],
             );
@@ -91,7 +98,6 @@ class _TextToSignViewState extends State<_TextToSignView> {
       ),
       child: Row(
         children: [
-          // زر الرجوع أو مساحة فارغة للحفاظ على التوسيط
           SizedBox(
             width: 40,
             child: state is TextToSignResultState
@@ -110,7 +116,6 @@ class _TextToSignViewState extends State<_TextToSignView> {
           const Spacer(),
           Text('ترجمة النص', style: tt.headlineLarge),
           const Spacer(),
-          // زر التحديث أو مساحة فارغة
           SizedBox(
             width: 40,
             child: IconButton(
@@ -136,34 +141,23 @@ class _TextToSignViewState extends State<_TextToSignView> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: 8),
-
-          // ── Text input ────────────────────────────────────────────────
           TextInputCard(
             controller: _textController,
             onChanged: (_) => setState(() {}),
           ),
-
           const SizedBox(height: 16),
-
-          // ── Convert button ────────────────────────────────────────────
           ElevatedButton(
             onPressed: _textController.text.trim().isEmpty
                 ? null
                 : () => _onConvert(context),
             child: const Text('تحويل إلى إشارة'),
           ),
-
           const SizedBox(height: 24),
-
-          // ── الترجمة الإشارية label ────────────────────────────────────
           Text(
             'الترجمة الإشارية',
             style: tt.headlineMedium!.copyWith(color: EsharaTheme.textPrimary),
           ),
-
           const SizedBox(height: 12),
-
-          // ── AI Avatar Placeholder ─────────────────────────────────────
           Container(
             height: 280,
             decoration: BoxDecoration(
@@ -182,7 +176,7 @@ class _TextToSignViewState extends State<_TextToSignView> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'سيظهر فيديو الترجمة هنا',
+                    'سيظهر الأفاتار ثلاثي الأبعاد هنا',
                     style: tt.titleMedium?.copyWith(
                       color: EsharaTheme.textSecondary,
                     ),
@@ -196,7 +190,7 @@ class _TextToSignViewState extends State<_TextToSignView> {
     );
   }
 
-  // ── State: Processing (full screen) ───────────────────────────────────────
+  // ── State: Processing ──────────────────────────────────────────────────────
   Widget _buildProcessingScreen(
     BuildContext context,
     TextToSignProcessingState state,
@@ -212,105 +206,123 @@ class _TextToSignViewState extends State<_TextToSignView> {
     );
   }
 
-  // ── State: Result ──────────────────────────────────────────────────────────
+  // ── State: Result (WebView) ────────────────────────────────────────────────
   Widget _buildResultBody(
     BuildContext context,
     TextToSignResultState state,
     TextTheme tt,
   ) {
-    return SingleChildScrollView(
-      key: const ValueKey('result'),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const SizedBox(height: 8),
+    final signVideo = state.signVideo;
 
-          // ── النص المكتوب (read-only) ──────────────────────────────────
+    return Column(
+      children: [
+        // ── النص المكتوب ────────────────────────────────────────────
+        Container(
+          margin: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: EsharaTheme.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: EsharaTheme.border),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              if (signVideo.simplifiedText != null &&
+                  signVideo.simplifiedText != signVideo.originalText) ...[
+                Text(
+                  'النص المبسط:',
+                  style: tt.bodySmall?.copyWith(color: EsharaTheme.textHint),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  signVideo.simplifiedText!,
+                  style: tt.bodyLarge!.copyWith(color: EsharaTheme.textPrimary),
+                  textDirection: TextDirection.rtl,
+                ),
+                const Divider(height: 16),
+              ],
+              Text(
+                signVideo.inputText,
+                style: tt.bodyMedium!.copyWith(color: EsharaTheme.textSecondary),
+                textDirection: TextDirection.rtl,
+              ),
+            ],
+          ),
+        ),
+
+        // ── WebView للأفاتار ──────────────────────────────────────────
+        Expanded(
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: EsharaTheme.border, width: 2),
+            ),
+            child: WebViewWidget(
+              controller: WebViewController()
+                ..setJavaScriptMode(JavaScriptMode.unrestricted)
+                ..loadRequest(Uri.parse(signVideo.avatarPlayerUrl)),
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        // ── Gloss Sequence ────────────────────────────────────────────
+        if (signVideo.glossSequence != null &&
+            signVideo.glossSequence!.isNotEmpty)
           Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: EsharaTheme.surface,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: EsharaTheme.border),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      state.signVideo.inputText,
-                      style: tt.bodyLarge!.copyWith(
-                        color: EsharaTheme.textPrimary,
-                      ),
-                      textDirection: TextDirection.rtl,
-                    ),
-                  ),
+                Text(
+                  'كلمات الإشارة:',
+                  style: tt.bodySmall?.copyWith(color: EsharaTheme.textHint),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        '${state.signVideo.inputText.length} / 200',
-                        style: tt.bodySmall,
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.end,
+                  children: signVideo.glossSequence!.map((gloss) {
+                    final color = gloss.matched
+                        ? EsharaTheme.success
+                        : EsharaTheme.error;
+                    return Chip(
+                      label: Text(
+                        gloss.gloss,
+                        style: tt.bodySmall?.copyWith(color: Colors.white),
                       ),
-                      const Spacer(),
-                      const Icon(
-                        Icons.copy_rounded,
-                        size: 18,
-                        color: EsharaTheme.textHint,
-                      ),
-                    ],
-                  ),
+                      backgroundColor: color,
+                      padding: EdgeInsets.zero,
+                    );
+                  }).toList(),
                 ),
               ],
             ),
           ),
 
-          const SizedBox(height: 24),
-
-          // ── label ─────────────────────────────────────────────────────
-          Text(
-            'الترجمة الإشارية',
-            style: tt.headlineMedium!.copyWith(color: EsharaTheme.textPrimary),
-          ),
-
-          const SizedBox(height: 12),
-
-          // ── Video Player ──────────────────────────────────────────────
-          SignVideoPlayer(
-            signVideo: state.signVideo,
-            onDownload: () {
-              context.read<TextToSignBloc>().add(
-                DownloadVideoEvent(videoUrl: state.signVideo.videoUrl),
-              );
-              SnackbarHelper.showCustomSnackBar(
-                context,
-                'جارٍ تحميل الفيديو...',
-              );
-            },
-          ),
-        ],
-      ),
+        const SizedBox(height: 16),
+      ],
     );
   }
 
-  /// [_onConvert] — بتبعت الـ event للـ BLoC عشان يبدأ التحويل
   void _onConvert(BuildContext context) {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
     context.read<TextToSignBloc>().add(ConvertTextEvent(text: text));
   }
 
-  /// [_onReset] — بيمسح النص وبيرجع للحالة الأولية
   void _onReset(BuildContext context) {
     _textController.clear();
     context.read<TextToSignBloc>().add(ResetTextToSignEvent());
-    setState(() {}); // لإعادة بناء الواجهة وتحديث حالة الزر
   }
 }

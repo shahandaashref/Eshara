@@ -1,5 +1,5 @@
 import 'package:eshara/Core/Helper/theme.dart';
-import 'package:eshara/features/admin/UI/Widget/admin_widgets.dart';
+import 'package:eshara/features/admin/ui/Widget/admin_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -41,8 +41,24 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       child: Scaffold(
         backgroundColor: EsharaTheme.background,
         body: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AdminAppBar(title: 'لوحة تحكم المسؤول', showBack: false),
+            AdminAppBar(
+              title: 'لوحة تحكم المسؤول',
+              showBack: false,
+              actions: [
+                IconButton(
+                  icon:  Icon(
+                    Icons.person_outline_rounded,
+                    size: 28,
+                    color: EsharaTheme.textPrimary,
+                  ),
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/profile');
+                  },
+                ),
+              ],
+            ),
             Expanded(
               child: BlocConsumer<AdminBloc, AdminState>(
                 listener: (context, state) {

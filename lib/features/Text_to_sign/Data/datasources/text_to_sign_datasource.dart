@@ -7,28 +7,31 @@ abstract class TextToSignRemoteDataSource {
 }
 
 /// [DataSource Implementation] — TextToSignRemoteDataSourceImpl
-/// تم تحديثها لتستخدم استدعاء HTTP حقيقي
+/// بيستخدم API الجديد: POST /translate
 class TextToSignRemoteDataSourceImpl implements TextToSignRemoteDataSource {
   final Dio dio;
 
   TextToSignRemoteDataSourceImpl({required this.dio});
 
-  /// [convertTextToSign] — بتبعت النص للـ AI ويرجع رابط الفيديو
+  /// [convertTextToSign] — بتبعت النص للـ API ويرجع رابط الأفاتار
   @override
   Future<SignVideoModel> convertTextToSign(String text) async {
     try {
       final response = await dio.post(
-        '/api/Translation/text-to-sign',
-        data: {'text': text},
+        '/translate',
+        data: {
+          'input_type': 'text',
+          'content': text,
+          'simplify_with_gemini': true,
+          'avatar': 'marc', // ممكن تخليها قابلة للتغيير بعدين
+        },
       );
-      if (response.data != null && response.data['success'] == true) {
-        return SignVideoModel(
-          inputText: text,
-          videoUrl: response.data['videoUrl'],
-          createdAt: DateTime.now(),
-        );
+
+      if (response.statusCode == 200 && response.data != null) {
+        return SignVideoModel.fromJson(response.data);
       }
-      throw Exception(response.data['message'] ?? 'فشل تحويل النص إلى إشارة');
+      
+      throw Exception('فشل تحويل النص إلى إشارة');
     } on DioException catch (e) {
       throw Exception('فشل تحويل النص: ${e.message}');
     }

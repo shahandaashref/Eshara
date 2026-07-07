@@ -1,10 +1,10 @@
 import 'package:eshara/Core/Helper/theme.dart';
 import 'package:eshara/Core/Widgets/app_bottom_nav.dart';
-import 'package:eshara/features/Dictionary/Ui/Screens/dictionary_page.dart';
-import 'package:eshara/features/Home/UI/Screens/home_page.dart';
-import 'package:eshara/features/Profile/Ui/Screens/profile_page.dart';
-import 'package:eshara/features/SignToText/UI/Screens/sign_to_text_page.dart';
-import 'package:eshara/features/Text_to_sign/Ui/Screens/text_to_sign_page.dart';
+import 'package:eshara/features/Dictionary/ui/Screens/dictionary_page.dart';
+import 'package:eshara/features/Home/ui/Screens/home_page.dart';
+import 'package:eshara/features/Profile/ui/Screens/profile_page.dart';
+import 'package:eshara/features/SignToText/ui/Screens/sign_to_text_page.dart';
+import 'package:eshara/features/Text_to_sign/ui/Screens/text_to_sign_page.dart';
 import 'package:flutter/material.dart';
 
 class MainPage extends StatefulWidget {

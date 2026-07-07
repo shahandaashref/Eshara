@@ -1,5 +1,5 @@
-import 'package:eshara/features/admin/Domain/entitys/admin_entities.dart';
-import 'package:eshara/features/admin/Domain/repositories/admin_repository.dart';
+import 'package:eshara/features/admin/domain/entities/admin_entities.dart';
+import 'package:eshara/features/admin/domain/repositories/admin_repository.dart';
 
 import '../datasources/admin_remote_datasource.dart';
 

@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:eshara/features/addword/Domain/entities/add_word_request.dart';
+import 'package:eshara/features/addword/domain/entities/add_word_request.dart';
 
 abstract class AddWordRemoteDataSource {
   Future<void> submitWordRequest(AddWordRequest request);

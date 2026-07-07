@@ -1,4 +1,7 @@
 import 'dart:io';
+import 'package:eshara/features/SignToText/ui/bloc/sign_bloc.dart';
+import 'package:eshara/features/SignToText/ui/bloc/sign_event.dart';
+import 'package:eshara/features/SignToText/ui/bloc/sign_state.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:camera/camera.dart';
 import 'package:video_compress/video_compress.dart';
@@ -6,18 +9,15 @@ import 'package:eshara/Core/Helper/theme.dart';
 import 'package:eshara/Core/Helper/snackbar_helper.dart';
 import 'package:eshara/Core/Widgets/app_bar.dart';
 import 'package:video_player/video_player.dart';
-import 'package:eshara/Core/di/dependency_injection.dart';
 import 'package:eshara/Core/di/injection_container.dart';
 
-import 'package:eshara/features/SignToText/UI/Widget/camera_preview_widget.dart';
-import 'package:eshara/features/SignToText/UI/Widget/processing_indicator.dart';
-import 'package:eshara/features/SignToText/UI/Widget/translation_result_card.dart';
+import 'package:eshara/features/SignToText/ui/Widget/camera_preview_widget.dart';
+import 'package:eshara/features/SignToText/ui/Widget/processing_indicator.dart';
+import 'package:eshara/features/SignToText/ui/Widget/translation_result_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:eshara/Core/constants/app_strings.dart';
-import '../bloc/sign_bloc.dart';
-import '../bloc/sign_event.dart';
-import '../bloc/sign_state.dart';
+
 
 class SignToTextPage extends StatelessWidget {
   const SignToTextPage({super.key});

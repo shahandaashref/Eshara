@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:eshara/current_user_store.dart';
+import 'package:dio/dio.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 
@@ -20,14 +21,14 @@ abstract class AuthRemoteDataSource {
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
-  final http.Client client;
+  final Dio dio;
   final SharedPreferences sharedPreferences;
   // الرابط الأساسي للسيرفر
   static const String baseUrl = 'https://eshara.runasp.net';
 
   AuthRemoteDataSourceImpl({
-    required this.client,
-    required this.sharedPreferences,
+    required this.dio,
+    required this.sharedPreferences, required Object client,
   });
 
   Map<String, dynamic> _decodeJsonBody(String responseBody) {
@@ -77,21 +78,16 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       // ملاحظة: تأكد من مسار الـ Endpoint في الـ Swagger
       final url = Uri.parse('$baseUrl/api/Auth/register');
 
-      final response = await client.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'fullName': name,
-          'email': email,
-          'password': password,
-        }),
+      final response = await dio.post(
+        '/api/Auth/register',
+        data: {'fullName': name, 'email': email, 'password': password},
       );
 
       debugPrint('Register Response Status: ${response.statusCode}');
-      debugPrint('Register Response Body: ${response.body}');
+      debugPrint('Register Response Body: ${response.data}');
 
       if (response.statusCode != 200 && response.statusCode != 201) {
-        throw Exception(_getErrorMessage(response.body));
+        throw Exception(_getErrorMessage(json.encode(response.data)));
       }
 
       CurrentUserStore().setUser(name: name, email: email);
@@ -105,19 +101,19 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     try {
       final url = Uri.parse('$baseUrl/api/Auth/login');
 
-      final response = await client.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'password': password}),
+      final response = await dio.post(
+        '/api/Auth/login',
+        data: {'email': email, 'password': password},
       );
 
       debugPrint('Login Response Status: ${response.statusCode}');
-      debugPrint('Login Response Body: ${response.body}');
+      debugPrint('Login Response Body: ${response.data}');
 
       if (response.statusCode == 200) {
-        final data = _decodeJsonBody(response.body);
+        final data = response.data as Map<String, dynamic>;
         final token =
             data['token'] ??
+            data['message'] ?? // للتعامل مع الاستجابة التي تحتوي على التوكن في الرسالة
             data['accessToken'] ??
             (data['data'] is Map ? (data['data'] as Map)['token'] : null);
 
@@ -165,7 +161,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
         throw Exception('لم يتم استلام رمز الدخول من الخادم');
       } else {
-        final errorMessage = _getErrorMessage(response.body);
+        final errorMessage = _getErrorMessage(json.encode(response.data));
         // إذا كانت الرسالة العامة (حدث خطأ في الخادم) نضع رسالة مخصصة لتسجيل الدخول
         throw Exception(
           errorMessage.contains('حدث خطأ')
@@ -183,17 +179,16 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     try {
       final url = Uri.parse('$baseUrl/api/Auth/verify-email');
 
-      final response = await client.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
+      final response = await dio.post(
+        '/api/Auth/verify-email',
+        data: {
           'email': email,
           'code': code, // تأكد من اسم المتغير في Swagger (قد يكون otp أو token)
-        }),
+        },
       );
 
       if (response.statusCode != 200) {
-        throw Exception(_getErrorMessage(response.body));
+        throw Exception(_getErrorMessage(json.encode(response.data)));
       }
     } catch (e) {
       throw Exception('حدث خطأ أثناء التحقق: $e');
@@ -205,14 +200,13 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     try {
       final url = Uri.parse('$baseUrl/api/Auth/resend-email');
 
-      final response = await client.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email}),
+      final response = await dio.post(
+        '/api/Auth/resend-email',
+        data: {'email': email},
       );
 
       if (response.statusCode != 200) {
-        throw Exception(_getErrorMessage(response.body));
+        throw Exception(_getErrorMessage(json.encode(response.data)));
       }
     } catch (e) {
       throw Exception('حدث خطأ أثناء إعادة الإرسال: $e');

@@ -1,7 +1,8 @@
-import 'package:eshara/features/Profile/Domain/usecases/profile_usecases.dart';
+import 'package:dio/dio.dart';
+import 'package:eshara/features/Profile/domain/usecases/profile_usecases.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:eshara/features/Profile/Ui/bloc/profile_event.dart';
-import 'package:eshara/features/Profile/Ui/bloc/profile_state.dart';
+import 'package:eshara/features/Profile/ui/bloc/profile_event.dart';
+import 'package:eshara/features/Profile/ui/bloc/profile_state.dart';
 
 class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   final GetProfileUseCase getProfileUseCase;
@@ -22,10 +23,18 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     LoadProfileEvent event,
     Emitter<ProfileState> emit,
   ) async {
-    emit(ProfileLoading()); // تم تصحيح الحالة
+    emit(ProfileLoading());
     try {
       final profile = await getProfileUseCase();
       emit(ProfileLoaded(profile));
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        emit(ProfileSessionExpired(
+          message: 'انتهت صلاحية الجلسة، يرجى تسجيل الدخول مرة أخرى',
+        ));
+      } else {
+        emit(ProfileError(e.toString().replaceAll('Exception: ', '')));
+      }
     } catch (e) {
       emit(ProfileError(e.toString().replaceAll('Exception: ', '')));
     }
@@ -39,7 +48,18 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     try {
       await updateProfileUseCase(event.profile);
       emit(ProfileUpdateSuccess());
-      add(LoadProfileEvent()); // إعادة تحميل البيانات بعد التحديث
+      
+      emit(ProfileLoading());
+      final profile = await getProfileUseCase();
+      emit(ProfileLoaded(profile));
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        emit(ProfileSessionExpired(
+          message: 'انتهت صلاحية الجلسة، يرجى تسجيل الدخول مرة أخرى',
+        ));
+      } else {
+        emit(ProfileError(e.toString().replaceAll('Exception: ', '')));
+      }
     } catch (e) {
       emit(ProfileError(e.toString().replaceAll('Exception: ', '')));
     }

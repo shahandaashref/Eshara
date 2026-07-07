@@ -1,10 +1,10 @@
-import 'package:eshara/features/admin/Domain/repositories/admin_repository.dart';
+import 'package:eshara/features/admin/domain/repositories/admin_repository.dart';
 
-import 'package:eshara/features/admin/Domain/entitys/admin_entities.dart';
+import 'package:eshara/features/admin/domain/entities/admin_entities.dart';
 
-class GetWordsUseCase {
+class GetWordsUseCaseAdmin {
   final AdminRepository repository;
-  GetWordsUseCase(this.repository);
+  GetWordsUseCaseAdmin(this.repository);
   Future<dynamic> call({String? categoryId}) async =>
       repository.getWords(categoryId: categoryId);
 }
@@ -27,9 +27,9 @@ class DeleteWordUseCase {
   Future<void> call(String wordId) async => repository.deleteWord(wordId);
 }
 
-class GetCategoriesUseCase {
+class GetCategoriesUseCaseAdmin {
   final AdminRepository repository;
-  GetCategoriesUseCase(this.repository);
+  GetCategoriesUseCaseAdmin(this.repository);
   Future<dynamic> call() async => repository.getCategories();
 }
 
@@ -39,7 +39,7 @@ class AddCategoryUseCase {
   Future<AdminCategory> call({
     required String name,
     String? description,
-  }) async => repository.addCategory(name,);
+  }) async => repository.addCategory(name);
 }
 
 class DeleteCategoryUseCase {

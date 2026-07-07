@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'package:eshara/Core/Helper/theme.dart';
-import 'package:eshara/features/Authentication/UI/Widget/header_app_bar_and_backgroun_auth.dart';
+import 'package:eshara/features/Authentication/ui/Widget/header_app_bar_and_backgroun_auth.dart';
+import 'package:eshara/features/Authentication/ui/bloc/auth_bloc.dart';
+import 'package:eshara/features/Authentication/ui/bloc/auth_event.dart';
+import 'package:eshara/features/Authentication/ui/bloc/auth_state.dart';
 import 'package:flutter/material.dart';
 import 'package:eshara/Core/Helper/helper.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../bloc/auth_bloc.dart';
-import '../bloc/auth_event.dart';
-import '../bloc/auth_state.dart';
+
 
 class VerifyEmailPage extends StatefulWidget {
   final String email;
@@ -67,7 +68,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
     String otpCode = _otpControllers.map((c) => c.text).join();
     if (otpCode.length == 6) {
       _isVerifyingAction = true; // المستخدم يحاول التحقق
-      context.read<AuthBloc>().add(VerifyOtpEvent(widget.email, otpCode));
+      context.read<AuthBloc>().add(VerifyOtpEvent(   email: '${widget.email}', code: '$otpCode'));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('يرجى إدخال الرمز المكون من 6 أرقام')),
@@ -183,7 +184,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
                                   _isVerifyingAction =
                                       false; // المستخدم يطلب إعادة الإرسال
                                   context.read<AuthBloc>().add(
-                                    ResendOtpEvent(widget.email),
+                                    ResendOtpEvent(email: '${widget.email}'  ),
                                   );
                                   _startTimer(); // بدء المؤقت من جديد بعد الضغط
                                 }

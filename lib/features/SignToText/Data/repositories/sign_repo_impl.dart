@@ -1,8 +1,8 @@
 import 'package:dartz/dartz.dart';
 import 'package:eshara/Core/error/failures.dart';
-import 'package:eshara/features/SignToText/Domain/entities/translation.dart';
-import 'package:eshara/features/SignToText/Domain/repositories/sign_repository.dart';
-import '../datasources/sign_remote_datasource.dart';
+import 'package:eshara/features/SignToText/Data/datasources/sign_remote_datasource.dart';
+import 'package:eshara/features/SignToText/domain/entities/translation.dart';
+import 'package:eshara/features/SignToText/domain/repositories/sign_repository.dart';
 
 class SignRepositoryImpl implements SignRepository {
   final SignRemoteDataSource remoteDataSource;

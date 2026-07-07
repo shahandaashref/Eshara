@@ -1,8 +1,8 @@
 import 'package:eshara/Core/Helper/theme.dart';
-import 'package:eshara/features/admin/Domain/entitys/admin_entities.dart';
-import 'package:eshara/features/admin/UI/Widget/admin_widgets.dart';
-import 'package:eshara/features/admin/UI/bloc/admin_bloc.dart';
-import 'package:eshara/features/admin/UI/bloc/admin_event_state.dart';
+import 'package:eshara/features/admin/domain/entities/admin_entities.dart';
+import 'package:eshara/features/admin/ui/Widget/admin_widgets.dart';
+import 'package:eshara/features/admin/ui/bloc/admin_bloc.dart';
+import 'package:eshara/features/admin/ui/bloc/admin_event_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

@@ -1,6 +1,8 @@
-import '../../Domain/entities/add_word_request.dart';
-import '../../Domain/repositories/add_word_repository.dart';
-import '../datasources/add_word_remote_datasource.dart';
+
+
+import 'package:eshara/features/addword/Data/datasources/add_word_remote_datasource.dart';
+import 'package:eshara/features/addword/domain/entities/add_word_request.dart';
+import 'package:eshara/features/addword/domain/repositories/add_word_repository.dart';
 
 class AddWordRepositoryImpl implements AddWordRepository {
   final AddWordRemoteDataSource remoteDataSource;

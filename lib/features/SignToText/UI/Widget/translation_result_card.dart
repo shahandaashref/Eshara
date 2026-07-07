@@ -1,5 +1,5 @@
 import 'package:eshara/Core/Helper/theme.dart';
-import 'package:eshara/features/SignToText/Domain/entities/translation.dart';
+import 'package:eshara/features/SignToText/domain/entities/translation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../core/constants/app_strings.dart';

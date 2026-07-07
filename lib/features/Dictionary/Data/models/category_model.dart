@@ -1,5 +1,5 @@
 
-import 'package:eshara/features/Dictionary/Domain/entities/category_entity.dart';
+import 'package:eshara/features/Dictionary/domain/entities/category_entity.dart';
 
 class CategoryModel extends CategoryEntity {
   const CategoryModel({

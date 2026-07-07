@@ -1,4 +1,4 @@
-import '../../Domain/entities/user_entity.dart';
+import '../../domain/entities/user_entity.dart';
 
 abstract class AuthState {}
 
@@ -23,4 +23,10 @@ class AuthActionSuccess extends AuthState {
 class AuthFailure extends AuthState {
   final String errorMessage;
   AuthFailure(this.errorMessage);
+}
+
+// أضف ده مع الـ states الموجودة
+class AuthTokenExpiredState extends AuthState {
+  final String message;
+  AuthTokenExpiredState({required this.message});
 }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
-import '../models/translation_model.dart';
+import 'package:eshara/features/SignToText/Data/models/translation_model.dart';
+
 import 'package:flutter/foundation.dart';
 
 abstract class SignRemoteDataSource {
@@ -25,7 +26,7 @@ class SignRemoteDataSourceImpl implements SignRemoteDataSource {
 
       // 2. إرسال الطلب باستخدام Dio
       final response = await dio.post(
-        'https://sign-to-text-production.up.railway.app/predict',
+        'https://sign-to-text-production-cd60.up.railway.app/predict',
         data: formData,
         options: Options(
           // Dio يستخدم milliseconds, الدقيقتان = 120000ms

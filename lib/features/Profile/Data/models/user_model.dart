@@ -1,4 +1,4 @@
-import 'package:eshara/features/Profile/Domain/entities/user.dart';
+import 'package:eshara/features/Profile/domain/entities/user.dart';
 
 
 /// [Model] — UserModel

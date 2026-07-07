@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:eshara/features/Profile/Domain/entities/profile_entity.dart';
+import 'package:eshara/features/Profile/domain/entities/profile_entity.dart';
 import '../models/profile_model.dart';
 
 abstract class ProfileRemoteDataSource {

@@ -1,69 +1,66 @@
-import '../../domain/entities/sign_video.dart';
+import 'package:eshara/features/Text_to_sign/domain/entities/sign_video.dart';
 
-// ══════════════════════════════════════════════════════
-// EVENTS
-// ══════════════════════════════════════════════════════
+// ── Events ─────────────────────────────────────────────────────────────────
+
 abstract class TextToSignEvent {}
 
-/// بيتبعت لما المستخدم يضغط "تحويل إلى إشارة"
-/// [text] — النص المكتوب في الـ TextField
 class ConvertTextEvent extends TextToSignEvent {
   final String text;
   ConvertTextEvent({required this.text});
 }
 
-/// بيتبعت لما المستخدم يضغط زرار الـ download
+class ResetTextToSignEvent extends TextToSignEvent {}
+
 class DownloadVideoEvent extends TextToSignEvent {
   final String videoUrl;
   DownloadVideoEvent({required this.videoUrl});
 }
 
-/// بيتبعت لما المستخدم يضغط رجوع — بيعمل reset
-class ResetTextToSignEvent extends TextToSignEvent {}
+// ── States ─────────────────────────────────────────────────────────────────
 
-// ══════════════════════════════════════════════════════
-// STATES
-// ══════════════════════════════════════════════════════
 abstract class TextToSignState {}
 
-/// الحالة الأولى — text field فاضي جاهز للإدخال
 class TextToSignIdleState extends TextToSignState {}
 
-/// بيعالج النص — فيه progress وخطوات
 class TextToSignProcessingState extends TextToSignState {
-  final double progress; // 0.0 → 1.0
-  final List<TextToSignStep> steps; // الخطوات الثلاثة
+  final double progress;
+  final List<TextToSignStep> steps;
+  final String? currentStage; // simplifying | matching | done
 
-  TextToSignProcessingState({required this.progress, required this.steps});
+  TextToSignProcessingState({
+    required this.progress,
+    required this.steps,
+    this.currentStage,
+  });
 }
 
-/// الفيديو جاهز للعرض
 class TextToSignResultState extends TextToSignState {
   final SignVideo signVideo;
-
   TextToSignResultState({required this.signVideo});
 }
 
-/// حصل خطأ
 class TextToSignErrorState extends TextToSignState {
   final String message;
   TextToSignErrorState({required this.message});
 }
 
-// ══════════════════════════════════════════════════════
-// STEP MODEL
-// ══════════════════════════════════════════════════════
+// ── Step Model ─────────────────────────────────────────────────────────────
 
-/// [TextToSignStep] — نفس نموذج الـ ProcessingStep في sign_to_text
-/// بيمثل خطوة واحدة من خطوات التحويل
+enum TextToSignStepStatus { pending, inProgress, done }
+
 class TextToSignStep {
   final String label;
   final TextToSignStepStatus status;
 
-  const TextToSignStep({required this.label, required this.status});
+  const TextToSignStep({
+    required this.label,
+    required this.status,
+  });
 
-  TextToSignStep copyWith({TextToSignStepStatus? status}) =>
-      TextToSignStep(label: label, status: status ?? this.status);
+  TextToSignStep copyWith({TextToSignStepStatus? status}) {
+    return TextToSignStep(
+      label: label,
+      status: status ?? this.status,
+    );
+  }
 }
-
-enum TextToSignStepStatus { pending, inProgress, done }

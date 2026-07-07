@@ -1,17 +1,14 @@
-import 'package:eshara/features/admin/Domain/entitys/admin_entities.dart';
+import 'package:eshara/features/admin/domain/entities/admin_entities.dart';
+import 'package:eshara/features/admin/domain/usecases/admin_usecases.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
-import '../../Domain/usecases/admin_usecases.dart';
 import 'admin_event_state.dart';
 
-/// [BLoC] — AdminBloc
-/// بيدير كل عمليات الأدمن: dashboard, words, categories, requests
 class AdminBloc extends Bloc<AdminEvent, AdminState> {
-  final GetWordsUseCase getWords;
+  final GetWordsUseCaseAdmin getWords;
   final AddWordUseCase addWord;
   final UpdateWordUseCase updateWord;
   final DeleteWordUseCase deleteWord;
-  final GetCategoriesUseCase getCategories;
+  final GetCategoriesUseCaseAdmin getCategories;
   final AddCategoryUseCase addCategory;
   final DeleteCategoryUseCase deleteCategory;
   final GetWordRequestsUseCase getRequests;
@@ -82,7 +79,6 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     }
 
     if (errors.length == 4) {
-      // إذا فشلت كل الطلبات
       emit(
         AdminErrorState(
           message: errors.isNotEmpty
@@ -97,7 +93,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
       totalWords: words.length,
       pendingRequests: requests
           .where((r) => r.status == WordRequestStatus.pending)
-          .length, // يتم حساب الطلبات المعلقة فقط
+          .length,
       totalUsers: (users is List) ? users.length : 0,
     );
 
@@ -127,17 +123,22 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     }
   }
 
+  // ✅ تعديل: reload مباشرة بدل add()
   Future<void> _onAddWord(AddWordEvent e, Emitter<AdminState> emit) async {
-    final prev = state;
     try {
       await addWord(e.word);
       emit(
         AdminActionSuccessState(
           message: 'تمت إضافة الكلمة بنجاح',
-          previousState: prev,
+          previousState: state,
         ),
       );
-      add(LoadWordsEvent());
+
+      // ✅ reload مباشرة
+      emit(AdminLoadingState());
+      final cats = await getCategories();
+      final words = await getWords();
+      emit(AdminWordsState(words: words, categories: cats));
     } catch (e) {
       emit(AdminErrorState(message: 'تعذر إضافة الكلمة: $e'));
     }
@@ -147,16 +148,20 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     UpdateWordEvent e,
     Emitter<AdminState> emit,
   ) async {
-    final prev = state;
     try {
       await updateWord(e.word);
       emit(
         AdminActionSuccessState(
           message: 'تم تعديل الكلمة بنجاح',
-          previousState: prev,
+          previousState: state,
         ),
       );
-      add(LoadWordsEvent());
+
+      // ✅ reload مباشرة
+      emit(AdminLoadingState());
+      final cats = await getCategories();
+      final words = await getWords();
+      emit(AdminWordsState(words: words, categories: cats));
     } catch (e) {
       emit(AdminErrorState(message: 'تعذر تعديل الكلمة: $e'));
     }
@@ -166,16 +171,20 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     DeleteWordEvent e,
     Emitter<AdminState> emit,
   ) async {
-    final prev = state;
     try {
       await deleteWord(e.wordId);
       emit(
         AdminActionSuccessState(
           message: 'تم حذف الكلمة بنجاح',
-          previousState: prev,
+          previousState: state,
         ),
       );
-      add(LoadWordsEvent());
+
+      // ✅ reload مباشرة
+      emit(AdminLoadingState());
+      final cats = await getCategories();
+      final words = await getWords();
+      emit(AdminWordsState(words: words, categories: cats));
     } catch (e) {
       emit(AdminErrorState(message: 'تعذر حذف الكلمة: $e'));
     }
@@ -198,16 +207,19 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     AddCategoryEvent e,
     Emitter<AdminState> emit,
   ) async {
-    final prev = state;
     try {
       await addCategory(name: e.name, description: e.description);
       emit(
         AdminActionSuccessState(
           message: 'تمت إضافة الفئة بنجاح',
-          previousState: prev,
+          previousState: state,
         ),
       );
-      add(LoadCategoriesEvent());
+
+      // ✅ reload مباشرة
+      emit(AdminLoadingState());
+      final cats = await getCategories();
+      emit(AdminCategoriesState(categories: cats));
     } catch (e) {
       emit(AdminErrorState(message: 'تعذر إضافة الفئة: $e'));
     }
@@ -217,16 +229,19 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     DeleteCategoryEvent e,
     Emitter<AdminState> emit,
   ) async {
-    final prev = state;
     try {
       await deleteCategory(e.categoryId);
       emit(
         AdminActionSuccessState(
           message: 'تم حذف الفئة بنجاح',
-          previousState: prev,
+          previousState: state,
         ),
       );
-      add(LoadCategoriesEvent());
+
+      // ✅ reload مباشرة
+      emit(AdminLoadingState());
+      final cats = await getCategories();
+      emit(AdminCategoriesState(categories: cats));
     } catch (e) {
       emit(AdminErrorState(message: 'تعذر حذف الفئة: $e'));
     }
@@ -249,16 +264,19 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     AcceptRequestEvent e,
     Emitter<AdminState> emit,
   ) async {
-    final prev = state;
     try {
       await acceptRequest(e.requestId);
       emit(
         AdminActionSuccessState(
           message: 'تم قبول الطلب بنجاح',
-          previousState: prev,
+          previousState: state,
         ),
       );
-      add(LoadRequestsEvent());
+
+      // ✅ reload مباشرة
+      emit(AdminLoadingState());
+      final requests = await getRequests();
+      emit(AdminRequestsState(requests: requests));
     } catch (e) {
       emit(AdminErrorState(message: 'تعذر قبول الطلب: $e'));
     }
@@ -268,13 +286,16 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     RejectRequestEvent e,
     Emitter<AdminState> emit,
   ) async {
-    final prev = state;
     try {
       await rejectRequest(e.requestId);
       emit(
-        AdminActionSuccessState(message: 'تم رفض الطلب', previousState: prev),
+        AdminActionSuccessState(message: 'تم رفض الطلب', previousState: state),
       );
-      add(LoadRequestsEvent());
+
+      // ✅ reload مباشرة
+      emit(AdminLoadingState());
+      final requests = await getRequests();
+      emit(AdminRequestsState(requests: requests));
     } catch (e) {
       emit(AdminErrorState(message: 'تعذر رفض الطلب: $e'));
     }

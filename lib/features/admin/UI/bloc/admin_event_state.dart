@@ -1,4 +1,4 @@
-import 'package:eshara/features/admin/Domain/entitys/admin_entities.dart';
+import 'package:eshara/features/admin/domain/entities/admin_entities.dart';
 
 // ══════════════════════════════════════════════════════
 // EVENTS

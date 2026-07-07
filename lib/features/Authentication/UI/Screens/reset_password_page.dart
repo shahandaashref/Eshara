@@ -1,6 +1,6 @@
 import 'package:eshara/Core/Helper/theme.dart';
-import 'package:eshara/features/Authentication/UI/Widget/custom_text_form_field.dart';
-import 'package:eshara/features/Authentication/UI/Widget/header_app_bar_and_backgroun_auth.dart';
+import 'package:eshara/features/Authentication/ui/Widget/custom_text_form_field.dart';
+import 'package:eshara/features/Authentication/ui/Widget/header_app_bar_and_backgroun_auth.dart';
 import 'package:flutter/material.dart';
 
 

@@ -11,13 +11,24 @@ class DictionaryInitial extends DictionaryState {}
 
 class DictionaryLoading extends DictionaryState {}
 
-class DictionaryLoaded extends DictionaryState {
-  final List<SignEntity> signs;
-  final String selectedCategory;
-  const DictionaryLoaded(this.signs, this.selectedCategory);
+class DictionaryCategoriesLoaded extends DictionaryState {
+  final List<CategoryEntity> categories;
+  const DictionaryCategoriesLoaded(this.categories);
 
   @override
-  List<Object> get props => [signs, selectedCategory];
+  List<Object> get props => [categories];
+}
+
+class DictionaryWordsLoaded extends DictionaryState {
+  final List<SignEntity> words;
+  final String? selectedCategoryId;
+  const DictionaryWordsLoaded({
+    required this.words,
+    this.selectedCategoryId,
+  });
+
+  @override
+  List<Object> get props => [words, selectedCategoryId ?? ''];
 }
 
 class DictionaryError extends DictionaryState {

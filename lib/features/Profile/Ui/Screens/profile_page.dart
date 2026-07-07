@@ -1,14 +1,15 @@
 import 'package:eshara/Core/Helper/theme.dart';
 import 'package:eshara/Core/Widgets/custom_app_bar.dart';
-import 'package:eshara/features/Profile/Ui/Screens/edit_profile_page.dart';
-import 'package:eshara/features/Profile/Ui/Widgets/settings_section.dart';
-import 'package:eshara/features/admin/UI/Screens/admin_categories_page.dart';
+import 'package:eshara/features/Profile/ui/Screens/edit_profile_page.dart';
+import 'package:eshara/features/Profile/ui/Widgets/settings_section.dart';
+import 'package:eshara/features/Profile/ui/bloc/profile_bloc.dart';
+import 'package:eshara/features/Profile/ui/bloc/profile_event.dart';
+import 'package:eshara/features/Profile/ui/bloc/profile_state.dart';
+import 'package:eshara/features/admin/ui/Screens/admin_categories_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../bloc/profile_bloc.dart';
-import '../bloc/profile_event.dart';
-import '../bloc/profile_state.dart';
+
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});

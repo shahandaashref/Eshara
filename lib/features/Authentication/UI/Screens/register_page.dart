@@ -1,15 +1,16 @@
 import 'package:eshara/Core/Helper/helper.dart';
-import 'package:eshara/features/Authentication/UI/Widget/ask_if_sign_in_up.dart';
-import 'package:eshara/features/Authentication/UI/Widget/custom_text_form_field.dart';
+import 'package:eshara/features/Authentication/ui/Widget/ask_if_sign_in_up.dart';
+import 'package:eshara/features/Authentication/ui/Widget/custom_text_form_field.dart';
 import 'package:eshara/Core/Helper/snackbar_helper.dart';
-import 'package:eshara/features/Authentication/UI/Widget/google_media.dart';
-import 'package:eshara/features/Authentication/UI/Widget/header_app_bar_and_backgroun_auth.dart';
-import 'package:eshara/features/Authentication/UI/Widget/or_and_divider.dart';
+import 'package:eshara/features/Authentication/ui/Widget/google_media.dart';
+import 'package:eshara/features/Authentication/ui/Widget/header_app_bar_and_backgroun_auth.dart';
+import 'package:eshara/features/Authentication/ui/Widget/or_and_divider.dart';
+import 'package:eshara/features/Authentication/ui/bloc/auth_bloc.dart';
+import 'package:eshara/features/Authentication/ui/bloc/auth_event.dart';
+import 'package:eshara/features/Authentication/ui/bloc/auth_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../bloc/auth_bloc.dart';
-import '../bloc/auth_event.dart';
-import '../bloc/auth_state.dart';
+
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -45,9 +46,10 @@ class _RegisterPageState extends State<RegisterPage> {
       }
       context.read<AuthBloc>().add(
         RegisterSubmittedEvent(
-          _nameController.text.trim(),
-          _emailController.text.trim(),
-          _passwordController.text,
+          name: _nameController.text.trim(),
+
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
         ),
       );
     }

@@ -9,15 +9,7 @@ class TextToSignRepositoryImpl implements TextToSignRepository {
 
   @override
   Future<SignVideo> convertTextToSign(String text) async {
-    // 1. نستدعي مصدر البيانات وننتظر النتيجة التي هي من نوع SignVideoModel
     final signVideoModel = await remoteDataSource.convertTextToSign(text);
-    // 2. نحول الـ SignVideoModel إلى SignVideo.
-    // هذا يفترض أن SignVideoModel لديه خاصية videoUrl وأن SignVideo يمكن إنشاؤه منها.
-    // الحل الأفضل هو جعل SignVideoModel يرث من SignVideo.
-    return SignVideo(
-      inputText: text,
-      videoUrl: signVideoModel.videoUrl,
-      createdAt: DateTime.now(),
-    );
+    return signVideoModel; // SignVideoModel يرث من SignVideo
   }
 }

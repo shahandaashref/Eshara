@@ -1,12 +1,12 @@
 import 'package:eshara/features/Dictionary/domain/entities/sign_entity.dart';
 import 'package:eshara/features/Dictionary/domain/repositories/dictionary_repository.dart';
 
-class SearchSignsUseCase {
+class GetWordsUseCase {
   final DictionaryRepository repository;
 
-  SearchSignsUseCase(this.repository);
+  GetWordsUseCase(this.repository);
 
-  Future<List<SignEntity>> call(String query) async {
-    return await repository.searchSigns(query);
+  Future<List<SignEntity>> call({required String categoryId}) async {
+    return await repository.getWordsByCategory(categoryId);
   }
 }

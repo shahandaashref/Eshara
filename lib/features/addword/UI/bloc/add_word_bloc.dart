@@ -1,8 +1,8 @@
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:eshara/features/addword/Domain/entities/add_word_request.dart';
-import 'package:eshara/features/addword/Domain/usecases/submit_word_request_usecase.dart';
-import 'package:eshara/features/addword/UI/bloc/add_word_bloc_state_event.dart';
+import 'package:eshara/features/addword/domain/entities/add_word_request.dart';
+import 'package:eshara/features/addword/domain/usecases/submit_word_request_usecase.dart';
+import 'package:eshara/features/addword/ui/bloc/add_word_bloc_state_event.dart';
 
 /// [BLoC] — AddWordBloc
 /// بيدير حالات صفحة إضافة كلمة جديدة

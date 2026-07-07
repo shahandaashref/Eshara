@@ -1,11 +1,12 @@
 import 'package:eshara/Core/Helper/theme.dart';
-import 'package:eshara/features/Profile/Domain/entities/profile_entity.dart';
+import 'package:eshara/features/Profile/domain/entities/profile_entity.dart';
+import 'package:eshara/features/Profile/ui/bloc/profile_bloc.dart';
+import 'package:eshara/features/Profile/ui/bloc/profile_event.dart';
+import 'package:eshara/features/Profile/ui/bloc/profile_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../bloc/profile_bloc.dart';
-import '../bloc/profile_event.dart';
-import '../bloc/profile_state.dart';
+
 
 /// [Page] — EditProfilePage
 /// بتتعرض لما المستخدم يضغط "تعديل الملف الشخصي".

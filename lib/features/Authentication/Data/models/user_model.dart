@@ -1,6 +1,6 @@
 import 'package:jwt_decoder/jwt_decoder.dart';
 
-import '../../Domain/entities/user_entity.dart';
+import '../../domain/entities/user_entity.dart';
 
 class UserModel extends UserEntity {
   UserModel({

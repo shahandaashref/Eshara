@@ -1,4 +1,4 @@
-import 'package:eshara/features/Profile/Domain/entities/profile_entity.dart';
+import 'package:eshara/features/Profile/domain/entities/profile_entity.dart';
 
 abstract class ProfileState {}
 
@@ -27,4 +27,10 @@ class ProfileLoggedOutState extends ProfileState {}
 class ProfileError extends ProfileState {
   final String message;
   ProfileError(this.message);
+}
+
+// أضف ده مع الـ states الموجودة
+class ProfileSessionExpired extends ProfileState {
+  final String message;
+  ProfileSessionExpired({required this.message});
 }

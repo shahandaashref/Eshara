@@ -1,5 +1,7 @@
-import '../entities/add_word_request.dart';
-import '../repositories/add_word_repository.dart';
+
+
+import 'package:eshara/features/addword/domain/entities/add_word_request.dart';
+import 'package:eshara/features/addword/domain/repositories/add_word_repository.dart';
 
 class SubmitWordRequestUseCase {
   final AddWordRepository repository;

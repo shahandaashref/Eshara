@@ -1,5 +1,5 @@
 import 'package:eshara/Core/Helper/theme.dart';
-import 'package:eshara/features/Dictionary/Domain/entities/sign_entity.dart';
+import 'package:eshara/features/Dictionary/domain/entities/sign_entity.dart';
 import 'package:flutter/material.dart';
 
 class SignVideoCard extends StatelessWidget {
